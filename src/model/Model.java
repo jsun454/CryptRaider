@@ -60,7 +60,7 @@ public class Model {
 		levelList = new ArrayList<Tile[][]>();		
 		loadLevels();
 		
-		currentLevel = 0;
+		currentLevel = 6;
 		board = levelList.get(currentLevel);
 		
 		gravityList = new ArrayList<Tile>();
@@ -214,11 +214,10 @@ public class Model {
 																						  // centered around the tile
 				i -= adjustment; // Shift i to account for objects destroyed in explosion
 			} else {
-				t.setFalling(false); // TODO: test if this works for when bombs fall 1 unit
-									 // TODO: test if adjustment works for multiple bombs
-									 // TODO: fix rock dropping on guy not killing guy
+				t.setFalling(false); // TODO: fix rock dropping on guy not killing guy
 									 // TODO: fix bug where moving the orb into the portal super fast leaves the rock
 									 //       in the same place in the next level for some reason
+									 // TODO: fix infinite game over message
 			}
 		}
 	}
