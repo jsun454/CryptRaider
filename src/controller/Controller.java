@@ -15,8 +15,8 @@ import model.Tile;
 import view.View;
 
 public class Controller {
-	Model model;
-	View view;
+	private Model model;
+	private View view;
 	
 	int numRows;
 	int numCols;
