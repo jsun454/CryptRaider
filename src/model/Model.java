@@ -60,7 +60,7 @@ public class Model {
 		levelList = new ArrayList<Tile[][]>();		
 		loadLevels();
 		
-		currentLevel = 2; // First level is 0
+		currentLevel = 0; // First level is 0
 		board = levelList.get(currentLevel);
 		
 		gravityList = new ArrayList<Tile>();
@@ -192,23 +192,6 @@ public class Model {
 	}
 	
 	public void gravity() {
-//		updateGravityList();
-//		for(int i = 0; i < gravityList.size(); i++) {
-//			Tile t = gravityList.get(i);
-//			if(inBounds(t.getRow() + 1, t.getCol()) && board[t.getRow() + 1][t.getCol()].getType() == BACKGROUND) {
-//				board[t.getRow()][t.getCol()] = new Tile(BACKGROUND, t.getRow(), t.getCol());
-//				board[t.getRow() + 1][t.getCol()] = new Tile(t.getType(), t.getRow() + 1, t.getCol());
-//				if (board[t.getRow() + 1][t.getCol()].getType() == BOMB && (canBeExploded(board[t.getRow() + 2][t.getCol()].getType()) || board[t.getRow() + 2][t.getCol()].getType() == HARD_SAND)) {
-//					board[t.getRow() + 1][t.getCol()] = new Tile(BACKGROUND, t.getRow() + 1, t.getCol());
-//					explode(t.getRow() + 1, t.getCol());
-//				}
-//				if(board[t.getRow() + 1][t.getCol()].getType() == ROCK && board[t.getRow() + 2][t.getCol()].getType() == BOMB) {
-//					explode(t.getRow() + 2, t.getCol());
-//				}
-//				
-//				gravityList.set(i, board[t.getRow() + 1][t.getCol()]);
-//			}
-//		}
 		for(int i = gravityList.size()-1; i != -1; --i) {
 			Tile t = gravityList.get(i);
 			Tile below = board[t.getRow()+1][t.getCol()];
@@ -228,8 +211,37 @@ public class Model {
 			} else if(t.isFalling() && t.explodesOn(below.getType())) {
 				explode(below.getRow(), below.getCol()); // Create an explosion centered around the tile below
 				// TODO: move i to the correct position after explode deletes a bunch of items
+				// TODO: fix gravity not working for second level
 			}
 		}
+	}
+	
+	public void explode(int row, int col) {
+		int[] dCol = {-1, 0, 1, -1, 1, -1, 0, 1};
+		int[] dRow = {-1, -1, -1, 0,  0, 1, 1, 1};
+		
+		board[row][col] = new Tile(BACKGROUND, row, col);
+		
+		for (int i = 0; i < dRow.length; i++) {
+			int tempRow = dRow[i] + row;
+			int tempCol = dCol[i] + col;
+			
+			if(inBounds(tempRow, tempCol) && board[tempRow][tempCol].getType() == PLAYER) {
+				loadGameOverView();
+			}
+			
+			if (inBounds(tempRow, tempCol) && canBeExploded(board[tempRow][tempCol].getType())) {
+				boolean ex = false;
+				if(board[tempRow][tempCol].getType() == BOMB) {
+					ex = true;
+				}
+				board[tempRow][tempCol] = new Tile(BACKGROUND, tempRow, tempCol);
+				if(ex) {
+					explode(tempRow, tempCol);
+				}
+			}
+		}
+		setTileTrackingVars();
 	}
 	
 	public Tile[][] move(int dRow, int dCol) {
@@ -272,33 +284,6 @@ public class Model {
 			}
 		}
 		return board;
-	}
-	
-	public void explode(int row, int col) {
-		int[] dCol = {-1, 0, 1, -1, 1, -1, 0, 1};
-		int[] dRow = {-1, -1, -1, 0,  0, 1, 1, 1};
-		
-		board[row][col] = new Tile(BACKGROUND, row, col);
-		
-		for (int i = 0; i < dRow.length; i++) {
-			int tempRow = dRow[i] + row;
-			int tempCol = dCol[i] + col;
-			
-			if(inBounds(tempRow, tempCol) && board[tempRow][tempCol].getType() == PLAYER) {
-				loadGameOverView();
-			}
-			
-			if (inBounds(tempRow, tempCol) && canBeExploded(board[tempRow][tempCol].getType())) {
-				boolean ex = false;
-				if(board[tempRow][tempCol].getType() == BOMB) {
-					ex = true;
-				}
-				board[tempRow][tempCol] = new Tile(BACKGROUND, tempRow, tempCol);
-				if(ex) {
-					explode(tempRow, tempCol);
-				}
-			}
-		}
 	}
 	
 	public boolean canBeExploded(char type) {
@@ -430,10 +415,6 @@ public class Model {
 	
 	public void loadGameWonView() {
 		controller.displayGameWonView();
-	}
-	
-	public void loadMenuView() {
-		controller.displayMenuView();
 	}
 	
 	// Returns the current board being used

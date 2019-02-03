@@ -29,11 +29,9 @@ public class View extends JFrame {
 	private static final long serialVersionUID = -5856476386594461049L;
 
 	// instance variables
-    Controller controller;
+    private Controller controller;
 
-    MyDrawingPanel drawingPanel;
-    JFrame customColor;
-    JPanel myColor;
+    private MyDrawingPanel drawingPanel;
     public Tile[][] board;
 
     Graphics g; 
@@ -62,7 +60,6 @@ public class View extends JFrame {
     int time = 0;
 
     String[][] imageBoard = new String[BOARD_WIDTH][BOARD_HEIGHT];
-    String tempImages;
 
     public JButton nextLevelBtn;
 
@@ -104,76 +101,35 @@ public class View extends JFrame {
 
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(null);
-
-        JPanel colorPanel = new JPanel();
-        colorPanel.setBounds(65, 450, 150, 70);
-
-        JPanel colorPanel2 = new JPanel();
-        colorPanel2.setBounds(225, 450, 150, 70);
-
         mainPanel.add(drawingPanel);
-
-        mainPanel.add(colorPanel);
-        mainPanel.add(colorPanel2);
 
         window.getContentPane().add(mainPanel);
 
         //Menu Stuff
         JMenuBar myMenuBar = new JMenuBar();
 
-        JMenu menu = new JMenu("Menu");
         JMenu optionMenu = new JMenu("Options");
         JMenu helpMenu = new JMenu("Help");
 
         JMenuItem newGameItem = new JMenuItem("New Game", 'n');
         JMenuItem exitItem = new JMenuItem("Exit", 'e');
-        JMenuItem howToPlayItem = new JMenuItem("How To Play", 't');
-        JMenuItem aboutItem = new JMenuItem("About", 't');
+        JMenuItem howToPlayItem = new JMenuItem("How To Play", 'h');
+        JMenuItem aboutItem = new JMenuItem("About", 'a');
 
-        menu.add(newGameItem);
-        menu.add(exitItem);
+        optionMenu.add(newGameItem);
+        optionMenu.add(exitItem);
         helpMenu.add(howToPlayItem);
         helpMenu.add(aboutItem);
 
-        myMenuBar.add(menu);
         myMenuBar.add(optionMenu);
         myMenuBar.add(helpMenu);
 
         window.setJMenuBar(myMenuBar);
-
         window.setVisible(true);
-
-        //JColorChooser
-        myColor = new JPanel(new FlowLayout());
-
-        myColor.setMinimumSize(new Dimension(500, 50));
-        myColor.setMaximumSize(new Dimension(500, 50));
-        myColor.setPreferredSize(new Dimension(500, 50));
-
-        customColor = new JFrame("Custom Color");
-        customColor.setBounds(100, 100, 610, 350);
-        customColor.setResizable(false);
-        customColor.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        customColor.add(myColor);
-
-        customColor.add(myColor, BorderLayout.PAGE_END);
     }
 
     public void setState(int state) {
         STATE = state;
-        if (STATE == DISP_LEVEL) {
-            drawingPanel.repaint();
-        } if (STATE == DISP_NEXT_LEVEL) {
-            loadNextLevel(g, drawingPanel);
-        } else if (STATE == DISP_GAME_OVER) {
-            loadGameOver();
-        } else if (STATE == DISP_GAME_WON) {
-            loadGameWon();
-        } else if (STATE == DISP_MENU) {
-            loadMenu();
-        }
-        //drawingPanel.repaint();
     }
 
     public int getState() {
@@ -203,14 +159,11 @@ public class View extends JFrame {
             } else if (STATE == DISP_NEXT_LEVEL) {
                 loadNextLevel(g, drawingPanel);
             } else if (STATE == DISP_GAME_OVER) {
-//                GameOverScreen gameOver = new GameOverScreen();
-//                gameOver.makeBoard();
+                GameOverScreen gameOver = new GameOverScreen();
+                gameOver.makeBoard();
             }else if (STATE == DISP_GAME_WON) {
                 FinishGame finishGame = new FinishGame();
                 finishGame.makeBoard();
-            } else if (STATE == DISP_MENU) {
-                StartScreen startScreen = new StartScreen();
-                startScreen.makeBoard();
             }
         }
     }
@@ -249,64 +202,13 @@ public class View extends JFrame {
     }
 
     public void loadNextLevel(Graphics g, MyDrawingPanel drawingPanel) {
-        //g.drawImage(menu, 0, 0, drawingPanel.getWidth(), drawingPanel.getHeight(), null);
-        //      JPanel panel = new JPanel();
-        //      nextLevelBtn = new JButton("Next Level");
-        //      panel.add(nextLevelBtn);
-        //      drawingPanel.add(panel);
     	if(g != null){
     		g.drawImage(nextLevel, 0, 0, drawingPanel.getWidth(), drawingPanel.getHeight(), null);
     	}
-        nextLevelBtn = new JButton("Next Level");
-        drawingPanel.add(nextLevelBtn);
-    }
-
-    private void loadMenu() {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void loadGameOver() {
-    	GameOverScreen gameOver = new GameOverScreen();
-        gameOver.makeBoard();
     }
 
     private void loadGameWon() {
         // TODO Auto-generated method stub
-
-    }
-
-    public void addCustomMouseListener(MouseListener m) {
-        drawingPanel.addMouseListener(m);
-    }
-
-    public void addCustomButtonListener(ActionListener a) {
-        //mntmBeginner.addActionListener(a);
-        nextLevelBtn.addActionListener(a);
-    }
-
-    public void startTimer() {
-        timer = new Timer(speed, new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    time++;
-                    //timer.setDelay(speed);
-                    //lblTimeElapsed.setText("TIME ELAPSED: " + time);
-                    //^^Change the label to be the label on the GUI
-                }
-            });
-        timer.start();
-    }
-
-    public void incrementTime() {
-        time++;
-    }
-
-    /*
-     * Returns true if the game is over. 
-     */
-    public boolean ifGameOver(){
-        return false;
     }
 
     public void homeScreen() {
@@ -323,9 +225,3 @@ public class View extends JFrame {
         drawingPanel.repaint();
     }
 }
-//
-//	public void updateBoard(Tile[][] moveUp) {
-//		board = moveUp;
-//		drawingPanel.repaint();
-//	}
-//}

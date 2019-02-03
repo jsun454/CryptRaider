@@ -38,13 +38,12 @@ public class Controller {
 		createModel();
 		createView();
 		
-		//view.addActionListener(new CustomActionListener());
 		view.getWindow().addKeyListener(new CustomKeyListener());
 		view.getWindow().addMouseListener(new CustomOnReleaseListener());
 		
 		startTimer();
 		
-//		view.startTimer(); //---------------------------------DO THIS ONCE GAME HAS STARTED
+//		view.startTimer(); // DO THIS ONCE GAME HAS STARTED
 //		view.homeScreen(); // Displays the home screen
 	}
 	
@@ -57,10 +56,6 @@ public class Controller {
 	
 	private void createView() {
 		view = new View(this);
-		view.setState(DISP_LEVEL);
-		view.setVisible(true);
-		view.setResizable(false);
-		view.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
 	
 	public class CustomKeyListener implements KeyListener {
@@ -83,24 +78,10 @@ public class Controller {
 				view.repaint();
 			}
 		}
-
 		@Override
 		public void keyReleased(KeyEvent e) {}
-		
 		@Override
 		public void keyTyped(KeyEvent e) {}
-	}
-	
-	public class CustomActionListener implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			if (e.getSource() == view.nextLevelBtn) {
-				model.loadNextLevel();
-			}
-//			if (e.getSource() == view.mntmBeginner) {
-//				//Do Stuff
-//			}
-		}
 	}
 	
 	public class CustomOnReleaseListener extends MouseAdapter {
@@ -115,7 +96,6 @@ public class Controller {
 		timer = new Timer(DELAY, new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				view.incrementTime();
 				model.gravity();
 				view.updateBoard(model.getBoard());
 				view.updateBoard(model.updateMummyPosition());
@@ -124,25 +104,16 @@ public class Controller {
 		timer.start();
 	}
 	
-	public int getTime() {
-		return time;
-	}
-	
 	public Tile[][] getBoard() {
 		return model.getBoard();
 	}
 	
 	public void displayGameOverView() {
 		view.setState(DISP_GAME_OVER);	
-		view.loadGameOver();
 	}
 	
 	public void displayGameWonView() {
 		view.setState(DISP_GAME_WON);		
-	}
-	
-	public void displayMenuView() {
-		view.setState(DISP_MENU);		
 	}
 	
 	public void displayNextView() {
@@ -151,9 +122,5 @@ public class Controller {
 	
 	public void displayLevel() {
 		view.setState(DISP_LEVEL);		
-	}
-	
-	public void reloadGUI() {
-		view.repaint();
 	}
 }
