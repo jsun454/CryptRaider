@@ -39,7 +39,7 @@ public class Model {
 	private Tile[][] board;
 	
 	private List<Tile> gravityList; // List of objects affected by gravity
-	private List<Tile> enemyList; // List of mummies
+	private List<Tile> enemyList; // List of enemies
 	
 	private int numOrbs;
 	
@@ -60,7 +60,7 @@ public class Model {
 		levelList = new ArrayList<Tile[][]>();		
 		loadLevels();
 		
-		currentLevel = 0; // First level is 0
+		currentLevel = 0;
 		board = levelList.get(currentLevel);
 		
 		gravityList = new ArrayList<Tile>();
@@ -189,6 +189,9 @@ public class Model {
 		return c;
 	}
 	
+	/*
+	 * Lowers all gravity-affected objects by one tile if possible
+	 */
 	public void gravity() {
 		for(int i = gravityList.size()-1; i != -1; --i) {
 			Tile t = gravityList.get(i);
@@ -207,39 +210,60 @@ public class Model {
 				}
 				t.setType(BACKGROUND);
 			} else if(t.isFalling() && t.explodesOn(below.getType())) {
-				explode(below.getRow(), below.getCol()); // Create an explosion centered around the tile below
-				// TODO: move i to the correct position after explode deletes a bunch of items
-				// TODO: fix rock not exploding on guy
+				int adjustment = explode(t.getRow(), t.getCol(), t.getRow(), t.getCol()); // Create an explosion
+																						  // centered around the tile
+				i -= adjustment; // Shift i to account for objects destroyed in explosion
+			} else {
+				t.setFalling(false); // TODO: test if this works for when bombs fall 1 unit
+									 // TODO: test if adjustment works for multiple bombs
+									 // TODO: fix rock dropping on guy not killing guy
+									 // TODO: fix bug where moving the orb into the portal super fast leaves the rock
+									 //       in the same place in the next level for some reason
 			}
 		}
 	}
 	
-	public void explode(int row, int col) {
-		int[] dCol = {-1, 0, 1, -1, 1, -1, 0, 1};
-		int[] dRow = {-1, -1, -1, 0,  0, 1, 1, 1};
-		
-		board[row][col] = new Tile(BACKGROUND, row, col);
-		
-		for (int i = 0; i < dRow.length; i++) {
-			int tempRow = dRow[i] + row;
-			int tempCol = dCol[i] + col;
-			
-			if(inBounds(tempRow, tempCol) && board[tempRow][tempCol].getType() == PLAYER) {
-				loadGameOverView();
-			}
-			
-			if (inBounds(tempRow, tempCol) && canBeExploded(board[tempRow][tempCol].getType())) {
-				boolean ex = false;
-				if(board[tempRow][tempCol].getType() == BOMB) {
-					ex = true;
+	/*
+	 * Explodes the target tile and its 8 surrounding tiles. Surrounding bombs trigger a chain of explosions. This
+	 * function returns the total number of gravity-affected objects that were exploded to the left/above the initial
+	 * target in order to adjust the loop index of the gravity function
+	 * 
+	 * @param row row of the explosion target
+	 * 
+	 * @param col column of the explosion target
+	 * 
+	 * @param initRow row of the original explosion target
+	 * 
+	 * @param initCol column of the original explosion target
+	 * 
+	 * @return the total number of gravity-afftected objects exploded to the left/above the initial explosion target
+	 */
+	public int explode(int row, int col, int initRow, int initCol) {
+		int adjustIndex = 0; // Number of gravity-affected objects exploded left/above the initial target
+		for(int r = -1; r != 2; ++r) {
+			for(int c = -1; c != 2; ++c) {
+				Tile t = board[row+r][col+c];
+				if(t.getType() == PLAYER) {
+					controller.displayGameOverView(); // Game over if player explodes
+					break;
 				}
-				board[tempRow][tempCol] = new Tile(BACKGROUND, tempRow, tempCol);
-				if(ex) {
-					explode(tempRow, tempCol);
+				if(t.canExplode()) {
+					if(gravityList.contains(t)) {
+						gravityList.remove(t);
+						if(10*(row+r) + (col+c) < 10*initRow + initCol) {
+							++adjustIndex;
+						}
+					}
+					if(t.getType() == BOMB && (r != 0 || c != 0)) {
+						t.setType(BACKGROUND);
+						adjustIndex += explode(row+r, col+c, initRow, initCol); // Causes a chain explosion
+					} else {
+						t.setType(BACKGROUND);
+					}
 				}
 			}
 		}
-		setTileTrackingVars();
+		return adjustIndex;
 	}
 	
 	public Tile[][] move(int dRow, int dCol) {
