@@ -12,111 +12,48 @@ import controller.Controller;
 public class Model {
 	private Controller controller;
 	
-	private final int BOARD_WIDTH = 18; // Width of the board.
-	private final int BOARD_HEIGHT = 12; // Height of the board.
+	// Game information
+	private static final int NUM_LEVELS = 20;
 	
-	// Variables to represent all the different objects in the game.
-	private final char HARD_SAND = 'H';
-	private final char GRANITE = 'G';
-	private final char SOFT_SAND = 'S';
-	private final char BACKGROUND = '0';
+	private static final int BOARD_WIDTH = 18;
+	private static final int BOARD_HEIGHT = 12;
+	
+	// Game objects
+	private static final char HARD_SAND = 'H';
+	private static final char GRANITE = 'G';
+	private static final char SOFT_SAND = 'S';
+	private static final char BACKGROUND = '0';
 
-	private final char BOMB = 'B';
-	private final char ORB = 'O';
-	private final char ROCK = 'R';
-	private final char PORTAL = 'P';
+	private static final char BOMB = 'B';
+	private static final char ORB = 'O';
+	private static final char ROCK = 'R';
+	private static final char PORTAL = 'P';
 
-	private final char PLAYER = 'U';
-	private final char MUMMY = 'M';
+	private static final char PLAYER = 'U';
+	private static final char MUMMY = 'M';
+	
+	// Level information
+	private ArrayList<Tile[][]> levelList;
+	private int currentLevel;
 
-	// Levels
-	private Tile[][] level1;
-	private Tile[][] level2;
-	private Tile[][] level3;
-	private Tile[][] level4;
-//	private Tile[][] level5;
-//	private Tile[][] level6;
-//	private Tile[][] level7;
-//	private Tile[][] level8;
-//	private Tile[][] level9;
-//	private Tile[][] level10;
-//	private Tile[][] level11;
-//	private Tile[][] level12;
-//	private Tile[][] level13;
-//	private Tile[][] level14;
-//	private Tile[][] level15;
-//	private Tile[][] level16;
-//	private Tile[][] level17;
-//	private Tile[][] level18;
-//	private Tile[][] level19;
-//	private Tile[][] level20;
-
-	private ArrayList<Tile[][]> levelList; // List of all the levels.
-	private int currentLevel; // Level that the board is currently showing.
-
-	private Tile[][] board; // Board that will actually be sent to controller.
+	private Tile[][] board;
 	
 	private ArrayList<Tile> gravityList; // List of objects affected by gravity.
 	private ArrayList<Tile> mummyList; // List of mummies.
 	
-	private int playerRow; // Row that the player is in.
-	private int playerCol; // Column that the player is in.
-	
 	private int numOrbs;
+	
+	// Player information
+	private int playerRow;
+	private int playerCol;
 
 	public Model(Controller controller) {
 		this.controller = controller;
 		
-		// Load all the level files.
-		level1 = loadLevel(new File("levels/level1.txt"));
-		level2 = loadLevel(new File("levels/level2.txt"));
-		level3 = loadLevel(new File("levels/level3.txt"));
-		level4 = loadLevel(new File("levels/level4.txt"));
-//		level5 = loadLevel(new File("levels/level5.txt"));
-//		level6 = loadLevel(new File("levels/level6.txt"));
-//		level7 = loadLevel(new File("levels/level7.txt"));
-//		level8 = loadLevel(new File("levels/level8.txt"));
-//		level9 = loadLevel(new File("levels/level9.txt"));
-//		level10 = loadLevel(new File("levels/level10.txt"));
-//		level11 = loadLevel(new File("levels/level11.txt"));
-//		level12 = loadLevel(new File("levels/level12.txt"));
-//		level13 = loadLevel(new File("levels/level13.txt"));
-//		level14 = loadLevel(new File("levels/level14.txt"));
-//		level15 = loadLevel(new File("levels/level15.txt"));
-//		level16 = loadLevel(new File("levels/level16.txt"));
-//		level17 = loadLevel(new File("levels/level17.txt"));
-//		level18 = loadLevel(new File("levels/level18.txt"));
-//		level19 = loadLevel(new File("levels/level19.txt"));
-//		level20 = loadLevel(new File("levels/level20.txt"));
-		
-		
-		// Add all the levels to an array of levels. Currently only 1 level.
 		levelList = new ArrayList<Tile[][]>();
-		levelList.add(level1);
-		levelList.add(level2);
-		levelList.add(level3);
-		levelList.add(level4);
-//		levelList.add(level5);
-//		levelList.add(level6);
-//		levelList.add(level7);
-//		levelList.add(level8);
-//		levelList.add(level9);
-//		levelList.add(level10);
-//		levelList.add(level11);
-//		levelList.add(level12);
-//		levelList.add(level13);
-//		levelList.add(level14);
-//		levelList.add(level15);
-//		levelList.add(level16);
-//		levelList.add(level17);
-//		levelList.add(level18);
-//		levelList.add(level19);
-//		levelList.add(level20);
+		currentLevel = 0;
 		
-		// Set the current level to be the Tile[][] at position 0 of levelList.
-		currentLevel = 1;
-
-		// Set the board to show the first level.
+		loadLevels();
 		board = levelList.get(currentLevel);
 		
 		// Initialize gravity and mummy lists.
@@ -132,43 +69,63 @@ public class Model {
 		// Update the player's position on the board.
 		updatePlayerPosition();
 	}
+	
+/*
+ 	* Loads each level from its respective text file in the levels folder 
+	*/
+	private void loadLevels() {
+		for(int i = 1; i <= NUM_LEVELS; i++) {
+			levelList.add(fileToLevel(new File("levels/level" + i + ".txt")));
+		}
+	}
 
-	// Loads the levels
-	private Tile[][] loadLevel(File file) {
-		ArrayList<Tile> tileList = new ArrayList<Tile>(); // Temporary list to keep track of all the tiles read, in order.
-		Tile[][] tile = new Tile[BOARD_HEIGHT][BOARD_WIDTH]; // 2D array of tiles that will be returned.
-
+/*
+	* Extracts a level from a given level file
+	* 
+	* @param file name of the file to extract the level from
+	* @return 2d array of tiles representing the level
+	*/
+	private Tile[][] fileToLevel(File file) {
+		Tile[][] level = new Tile[BOARD_HEIGHT][BOARD_WIDTH];
+		
+		int row = 0, col = 0;
 		try {
 			Scanner sc = new Scanner(file);
-
 			while(sc.hasNext()) {
-				char type = imageStringToChar(sc.next().substring(1)); // Reads the next object to be displayed.
-
-				sc.next(); // Read and ignore the boolean for walkable. 
-
-				tileList.add(new Tile(type, -1, -1)); // Adds a new tile to the tile list, with row and col set to -1 temporarily.
+				
+				// Add the next tile to the level array
+				char tileType = imageStringToChar(sc.next().substring(1));
+				level[row][col] = new Tile(tileType, row, col);
+				
+				// Update row and column to be the next tile's position
+				if(col == BOARD_WIDTH - 1) {
+					++row;
+					col = 0;
+				} else {
+					++col;
+				}
+				
+				sc.next(); // Discard unused tile information from file
 			}
 
 			sc.close();		
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-
-		for(int row = 0; row < tile.length; row++) {
-			for(int col = 0; col < tile[0].length; col++) {
-				tileList.get(0).setRow(row); // Officially set the row of the tile (previously set to -1).
-				tileList.get(0).setCol(col); // Officially set the column of the tile.
-				tile[row][col] = tileList.remove(0); // Add the tile to the 2D array of tiles and remove it from the tile list.
-			}
-		}
 		
-		return tile;
+		return level;
 	}
-
-	// Converts the image strings from the level files into characters
+	
+/*
+	* Converts a given image file string to its corresponding character
+	* 
+	* @param s string containing the name of an image file
+	* @return character representing the image file
+	*/
 	private char imageStringToChar(String s) {
-		char c = ' ';
-		switch (s) {
+		char c = '\0';
+		
+		switch(s) {
 		case "hardSand.png":
 			c = HARD_SAND;
 			break;
@@ -199,10 +156,9 @@ public class Model {
 		case "mummy.png":
 			c = MUMMY;
 			break;
-		default:
-			break;
 		}
-
+		
+		assert(c != '\0');
 		return c;
 	}
 	

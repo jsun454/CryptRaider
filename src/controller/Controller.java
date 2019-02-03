@@ -15,35 +15,28 @@ import model.Tile;
 import view.View;
 
 public class Controller {
-	View view;
 	Model model;
+	View view;
 	
 	int numRows;
 	int numCols;
 	
 	Timer timer;
-	int speed = 250;
 	int time = 0;
 	
 	Tile[][] board;
 	
-	private int DISP_LEVEL = 0;
-    private int DISP_NEXT_LEVEL = 1;
-    private int DISP_GAME_OVER = 2;
-    private int DISP_GAME_WON = 3;
-    private int DISP_MENU = 4;
+	private static final int DELAY = 250;
+	
+	private static final int DISP_LEVEL = 0;
+    private static final int DISP_NEXT_LEVEL = 1;
+    private static final int DISP_GAME_OVER = 2;
+    private static final int DISP_GAME_WON = 3;
+    private static final int DISP_MENU = 4;
 	
 	public Controller() {
-		model = new Model(this);
-		board = model.getBoard();
-		numRows = board.length;
-		numCols = board[0].length;
-		
-		view = new View(this);
-		view.setState(DISP_LEVEL);
-		view.setVisible(true);
-		view.setResizable(false);
-		view.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		createModel();
+		createView();
 		
 		//view.addActionListener(new CustomActionListener());
 		view.getWindow().addKeyListener(new CustomKeyListener());
@@ -55,11 +48,24 @@ public class Controller {
 //		view.homeScreen(); // Displays the home screen
 	}
 	
+	private void createModel() {
+		model = new Model(this);
+		board = model.getBoard();
+		numRows = board.length;
+		numCols = board[0].length;
+	}
+	
+	private void createView() {
+		view = new View(this);
+		view.setState(DISP_LEVEL);
+		view.setVisible(true);
+		view.setResizable(false);
+		view.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	}
 	
 	public class CustomKeyListener implements KeyListener {
 		@Override
 		public void keyPressed(KeyEvent e) {
-			// TODO Auto-generated method stub
 			if (e.getKeyCode() == KeyEvent.VK_UP) {
 				view.updateBoard(model.move(-1, 0));
 			}
@@ -79,16 +85,10 @@ public class Controller {
 		}
 
 		@Override
-		public void keyReleased(KeyEvent e) {
-			// TODO Auto-generated method stub
-			
-		}
-
+		public void keyReleased(KeyEvent e) {}
+		
 		@Override
-		public void keyTyped(KeyEvent e) {
-			// TODO Auto-generated method stub
-			
-		}
+		public void keyTyped(KeyEvent e) {}
 	}
 	
 	public class CustomActionListener implements ActionListener {
@@ -112,7 +112,7 @@ public class Controller {
 	}
 	
 	public void startTimer() {
-		timer = new Timer(speed, new ActionListener() {
+		timer = new Timer(DELAY, new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				view.incrementTime();
