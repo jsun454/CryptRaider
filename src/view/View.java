@@ -213,7 +213,7 @@ public class View extends JFrame {
 
     public void homeScreen() {
         // Displays GUI that corresponds with the Crypt Raider's initial screen
-        //Includes "New Game" and "Instructions" buttons
+        // Includes "New Game" and "Instructions" buttons
     }
 
     public JFrame getWindow() {

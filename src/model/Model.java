@@ -153,7 +153,6 @@ public class Model {
 	 */
 	private char imageStringToChar(String s) {
 		char c = '\0';
-		
 		switch(s) {
 		case "hardSand.png":
 			c = HARD_SAND;
@@ -186,7 +185,6 @@ public class Model {
 			c = MUMMY;
 			break;
 		}
-		
 		assert(c != '\0');
 		return c;
 	}
@@ -211,7 +209,7 @@ public class Model {
 			} else if(t.isFalling() && t.explodesOn(below.getType())) {
 				explode(below.getRow(), below.getCol()); // Create an explosion centered around the tile below
 				// TODO: move i to the correct position after explode deletes a bunch of items
-				// TODO: fix gravity not working for second level
+				// TODO: fix rock not exploding on guy
 			}
 		}
 	}
@@ -380,10 +378,8 @@ public class Model {
 	
 	// Sets the current board to the next level
 	public void loadNextLevel() {
-		currentLevel++;
-		board = levelList.get(currentLevel);
-		updatePlayerPosition();
-		numOrbs = getNumOrbs();
+		board = levelList.get(++currentLevel);
+		setTileTrackingVars();
 		controller.displayLevel();
 	}
 	

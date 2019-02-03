@@ -56,6 +56,10 @@ public class Controller {
 	
 	private void createView() {
 		view = new View(this);
+		view.setState(DISP_LEVEL);
+		view.setVisible(true);
+		view.setResizable(false);
+		view.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
 	
 	public class CustomKeyListener implements KeyListener {
