@@ -116,7 +116,8 @@ public class Controller {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				view.incrementTime();
-				view.updateBoard(model.gravity());
+				model.gravity();
+				view.updateBoard(model.getBoard());
 				view.updateBoard(model.updateMummyPosition());
 			}
 		});
@@ -145,7 +146,7 @@ public class Controller {
 	}
 	
 	public void displayNextView() {
-		view.setState(DISP_NEXT_LEVEL);		
+		view.setState(DISP_NEXT_LEVEL);
 	}
 	
 	public void displayLevel() {

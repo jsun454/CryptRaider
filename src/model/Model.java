@@ -57,24 +57,17 @@ public class Model {
 	public Model(Controller controller) {
 		this.controller = controller;
 		
-		levelList = new ArrayList<Tile[][]>();
-		currentLevel = 0;
-		
+		levelList = new ArrayList<Tile[][]>();		
 		loadLevels();
+		
+		currentLevel = 2; // First level is 0
 		board = levelList.get(currentLevel);
 		
-		// Initialize gravity and mummy lists
 		gravityList = new ArrayList<Tile>();
 		enemyList = new ArrayList<Tile>();
+		numOrbs = 0;
 		
-		// Add appropriate tiles tiles to gravity and mummy lists
-		updateGravityList();
-		updateMummyList();
-		
-		numOrbs = getNumOrbs();
-		
-		// Update the player's position on the board
-		updatePlayerPosition();
+		setTileTrackingVars();
 	}
 	
 	/*
@@ -103,7 +96,8 @@ public class Model {
 				
 				// Add the next tile to the level array
 				char tileType = imageStringToChar(sc.next().substring(1));
-				level[row][col] = new Tile(tileType, row, col);
+				Tile t = new Tile(tileType, row, col);
+				level[row][col] = t;
 				
 				// Update row and column to be the next tile's position
 				if(col == BOARD_WIDTH - 1) {
@@ -122,6 +116,32 @@ public class Model {
 		}
 		
 		return level;
+	}
+	
+	/*
+	 * Initialize the lists and variables for tracking the certain tile locations
+	 */
+	private void setTileTrackingVars() {
+		for(int row = 0; row != board.length; ++row) {
+			for(int col = 0; col != board[0].length; ++col) {
+				Tile t = board[row][col];
+				
+				// Add objects that can fall to the gravity list
+				if(t.canFall()) {
+					gravityList.add(t);
+				}
+				
+				// Update variables for tracking enemies, player, and orbs
+				if(t.getType() == MUMMY) {
+					enemyList.add(t);
+				} else if(t.getType() == PLAYER) {
+					playerRow = t.getRow();
+					playerCol = t.getCol();
+				} else if(t.getType() == ORB) {
+					++numOrbs;
+				}
+			}
+		}
 	}
 	
 	/*
@@ -171,26 +191,45 @@ public class Model {
 		return c;
 	}
 	
-	public Tile[][] gravity() {
-		updateGravityList();
-		for(int i = 0; i < gravityList.size(); i++) {
+	public void gravity() {
+//		updateGravityList();
+//		for(int i = 0; i < gravityList.size(); i++) {
+//			Tile t = gravityList.get(i);
+//			if(inBounds(t.getRow() + 1, t.getCol()) && board[t.getRow() + 1][t.getCol()].getType() == BACKGROUND) {
+//				board[t.getRow()][t.getCol()] = new Tile(BACKGROUND, t.getRow(), t.getCol());
+//				board[t.getRow() + 1][t.getCol()] = new Tile(t.getType(), t.getRow() + 1, t.getCol());
+//				if (board[t.getRow() + 1][t.getCol()].getType() == BOMB && (canBeExploded(board[t.getRow() + 2][t.getCol()].getType()) || board[t.getRow() + 2][t.getCol()].getType() == HARD_SAND)) {
+//					board[t.getRow() + 1][t.getCol()] = new Tile(BACKGROUND, t.getRow() + 1, t.getCol());
+//					explode(t.getRow() + 1, t.getCol());
+//				}
+//				if(board[t.getRow() + 1][t.getCol()].getType() == ROCK && board[t.getRow() + 2][t.getCol()].getType() == BOMB) {
+//					explode(t.getRow() + 2, t.getCol());
+//				}
+//				
+//				gravityList.set(i, board[t.getRow() + 1][t.getCol()]);
+//			}
+//		}
+		for(int i = gravityList.size()-1; i != -1; --i) {
 			Tile t = gravityList.get(i);
-			if(inBounds(t.getRow() + 1, t.getCol()) && board[t.getRow() + 1][t.getCol()].getType() == BACKGROUND) {
-				board[t.getRow()][t.getCol()] = new Tile(BACKGROUND, t.getRow(), t.getCol());
-				board[t.getRow() + 1][t.getCol()] = new Tile(t.getType(), t.getRow() + 1, t.getCol());
-				if (board[t.getRow() + 1][t.getCol()].getType() == BOMB && (canBeExploded(board[t.getRow() + 2][t.getCol()].getType()) || board[t.getRow() + 2][t.getCol()].getType() == HARD_SAND)) {
-					board[t.getRow() + 1][t.getCol()] = new Tile(BACKGROUND, t.getRow() + 1, t.getCol());
-					explode(t.getRow() + 1, t.getCol());
+			Tile below = board[t.getRow()+1][t.getCol()];
+			if(t.canMoveInto(below.getType())) {
+				if(below.getType() == PORTAL) {
+					gravityList.remove(i); // If the object is an orb and it falls into the portal, remove it from the
+										   // board
+					if(--numOrbs == 0) {
+						controller.displayNextView();
+					}
+				} else {
+					below.setType(t.getType()); // Lower the object by one tile
+					below.setFalling(true);
+					gravityList.set(i, below);
 				}
-				if(board[t.getRow() + 1][t.getCol()].getType() == ROCK && board[t.getRow() + 2][t.getCol()].getType() == BOMB) {
-					explode(t.getRow() + 2, t.getCol());
-				}
-				
-				gravityList.set(i, board[t.getRow() + 1][t.getCol()]);
+				t.setType(BACKGROUND);
+			} else if(t.isFalling() && t.explodesOn(below.getType())) {
+				explode(below.getRow(), below.getCol()); // Create an explosion centered around the tile below
+				// TODO: move i to the correct position after explode deletes a bunch of items
 			}
 		}
-		
-		return board;
 	}
 	
 	public Tile[][] move(int dRow, int dCol) {
@@ -245,7 +284,7 @@ public class Model {
 			int tempRow = dRow[i] + row;
 			int tempCol = dCol[i] + col;
 			
-			if(board[tempRow][tempCol].getType() == PLAYER) {
+			if(inBounds(tempRow, tempCol) && board[tempRow][tempCol].getType() == PLAYER) {
 				loadGameOverView();
 			}
 			

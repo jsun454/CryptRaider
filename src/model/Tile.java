@@ -97,8 +97,8 @@ public final class Tile {
 	 * 
 	 * @return the list of characters representing tiles the object can fall and explode on
 	 */
-	public List<Character> explodesOn() {
-		return explodesOn;
+	public boolean explodesOn(char type) {
+		return explodesOn.contains(type);
 	}
 
 	/*
@@ -106,8 +106,8 @@ public final class Tile {
 	 * 
 	 * @return the list of characters representing tiles the object can move into
 	 */
-	public List<Character> canMoveInto() {
-		return canMoveInto;
+	public boolean canMoveInto(char type) {
+		return canMoveInto.contains(type);
 	}
 
 	/*
@@ -117,6 +117,7 @@ public final class Tile {
 	 */
 	public final void setType(char type) {
 		this.type = type;
+		setTypeBasedVars();
 	}
 
 	/*
