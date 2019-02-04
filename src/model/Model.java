@@ -155,10 +155,27 @@ public class Model {
 			} else if(t.isFalling() && t.explodesOn(below.getType())) {
 				explode(t.getRow(), t.getCol()); // Create an explosion centered around the tile
 			} else {
-				t.setFalling(false); // TODO: make gravityList sort every time objects change position
-									 // TODO: fix infinite game over message
+				t.setFalling(false);
 			}
 		}
+	}
+	
+	/*
+	 * Load the board for the next level
+	 */
+	public void nextLevel() {
+		board = levelList.get(++currentLevel);
+		setTileTrackingVars();
+		controller.displayLevel();
+	}
+	
+	/*
+	 * Returns the current game board
+	 * 
+	 * @return the current game board
+	 */
+	public Tile[][] getBoard() {
+		return board;
 	}
 	
 	/*
@@ -361,11 +378,7 @@ public class Model {
 			bestRow = row;
 			bestCol = col - 1;
 		}
-		System.out.print(distance(bestRow, bestCol, playerRow, playerCol) + " ");
-		System.out.print(distance(row+1, col, playerRow, playerCol) + " ");
-		System.out.print(distance(row-1, col, playerRow, playerCol) + " ");
-		System.out.print(distance(row, col+1, playerRow, playerCol) + " ");
-		System.out.println(distance(row, col-1, playerRow, playerCol) + " ");
+		
 		if(bestRow != row || bestCol != col) {
 			if(board[bestRow][bestCol].getType() == PLAYER) {
 				explode(row, col);
@@ -392,25 +405,5 @@ public class Model {
 	 */
 	private double distance(int x1, int y1, int x2, int y2) {
 		return Math.sqrt(Math.pow(x2-x1, 2.0) + Math.pow(y2-y1, 2.0));
-	}
-	
-	// Sets the current board to the next level
-	public void loadNextLevel() {
-		board = levelList.get(++currentLevel);
-		setTileTrackingVars();
-		controller.displayLevel();
-	}
-	
-	public void loadGameOverView() {
-		controller.displayGameOverView();
-	}
-	
-	public void loadGameWonView() {
-		controller.displayGameWonView();
-	}
-	
-	// Returns the current board being used
-	public Tile[][] getBoard() {
-		return board;
 	}
 }

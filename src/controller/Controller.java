@@ -27,6 +27,7 @@ public class Controller {
     private static final int DISP_GAME_OVER = 2;
     private static final int DISP_GAME_WON = 3;
 	
+    // TODO: fix infinite game over message
 	public Controller() {
 		model = new Model(this);
 		view = new View(this);
@@ -58,7 +59,7 @@ public class Controller {
 				view.updateBoard(model.getBoard());
 			}
 			if (e.getKeyCode() == KeyEvent.VK_SPACE && view.getState() == DISP_NEXT_LEVEL) {
-				model.loadNextLevel();
+				model.nextLevel();
 				view.repaint();
 			}
 		}
