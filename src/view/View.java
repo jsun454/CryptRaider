@@ -1,3 +1,7 @@
+/*
+ * This class handles the visual aspects of the game
+ */
+
 package view;
 
 import java.awt.Color;
@@ -31,11 +35,10 @@ public class View extends JFrame {
     Graphics g; 
     MyDrawingPanel b;
 
-    private int DISP_LEVEL = 0;
-    private int DISP_NEXT_LEVEL = 1;
-    private int DISP_GAME_OVER = 2;
-    private int DISP_GAME_WON = 3;
-    private int DISP_MENU = 4;
+    private static final int PLAYING = 0;
+    private static final int TRANSITION_STATE = 1;
+    private static final int GAME_OVER = 2;
+    private static final int GAME_WON = 3;
 
     private int STATE;
 
@@ -58,7 +61,7 @@ public class View extends JFrame {
     public JButton nextLevelBtn;
 
     public View(Controller controller) {
-        STATE = DISP_MENU;
+        STATE = PLAYING;
 
         this.controller = controller;
         board = controller.getBoard();
@@ -137,7 +140,7 @@ public class View extends JFrame {
         protected void paintComponent(Graphics g) {
 
             board = controller.getBoard();
-            if (STATE == DISP_LEVEL) {
+            if (STATE == PLAYING) {
                 g.setColor(Color.white);
                 g.fillRect(2, 2, this.getWidth()-2, this.getHeight()-2);
 
@@ -150,12 +153,12 @@ public class View extends JFrame {
 
                 loadLevel(controller.getBoard(), g, this);
 
-            } else if (STATE == DISP_NEXT_LEVEL) {
+            } else if (STATE == TRANSITION_STATE) {
                 loadNextLevel(g, drawingPanel);
-            } else if (STATE == DISP_GAME_OVER) {
+            } else if (STATE == GAME_OVER) {
                 GameOverScreen gameOver = new GameOverScreen();
                 gameOver.makeBoard();
-            }else if (STATE == DISP_GAME_WON) {
+            }else if (STATE == GAME_WON) {
                 FinishGame finishGame = new FinishGame();
                 finishGame.makeBoard();
             }
@@ -199,15 +202,6 @@ public class View extends JFrame {
     	if(g != null){
     		g.drawImage(nextLevel, 0, 0, drawingPanel.getWidth(), drawingPanel.getHeight(), null);
     	}
-    }
-
-    private void loadGameWon() {
-        // TODO Auto-generated method stub
-    }
-
-    public void homeScreen() {
-        // Displays GUI that corresponds with the Crypt Raider's initial screen
-        // Includes "New Game" and "Instructions" buttons
     }
 
     public JFrame getWindow() {

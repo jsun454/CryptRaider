@@ -1,3 +1,9 @@
+/*
+ * This class is used to represent individual objects in the game 
+ * 
+ * @author Jeffrey Sun
+ */
+
 package model;
 
 import java.util.ArrayList;

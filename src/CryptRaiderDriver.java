@@ -1,3 +1,9 @@
+/*
+ * This class runs the game controller to start Crypt Raider
+ * 
+ * @author Jeffrey Sun
+ */
+
 import controller.Controller;
 
 public class CryptRaiderDriver {

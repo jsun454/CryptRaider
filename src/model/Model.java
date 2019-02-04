@@ -1,3 +1,10 @@
+/*
+ * This class handles game data and functionality, storing object positions and implementing features such as gravity
+ * and enemy movement
+ * 
+ * @author Jeffrey Sun
+ */
+
 package model;
 
 import java.io.File;
@@ -56,7 +63,7 @@ public class Model {
 		levelList = new ArrayList<Tile[][]>();		
 		loadLevels();
 		
-		currentLevel = 3;
+		currentLevel = 0; // Tested up to 16
 		board = levelList.get(currentLevel);
 		
 		gravityList = new ArrayList<Tile>();
@@ -142,7 +149,7 @@ public class Model {
 					// If the object is an orb and it falls into the portal, remove it from the board
 					gravityList.set(i, null);
 					if(--numOrbs == 0) {
-						controller.displayNextView();
+						controller.goToNextLevel();
 					}
 				} else {
 					// Lower the object by one tile
@@ -166,7 +173,7 @@ public class Model {
 	public void nextLevel() {
 		board = levelList.get(++currentLevel);
 		setTileTrackingVars();
-		controller.displayLevel();
+		controller.showLevel();
 	}
 	
 	/*
@@ -319,7 +326,7 @@ public class Model {
 						} else {
 							target.setType(BACKGROUND);
 						}
-						controller.displayGameOverView();
+						controller.gameOver();
 						return;
 					}
 					

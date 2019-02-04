@@ -1,13 +1,16 @@
+/*
+ * This class handles communication between game data and visuals
+ * 
+ * @author Jeffrey Sun
+ */
+
 package controller;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
-import javax.swing.JFrame;
 import javax.swing.Timer;
 
 import model.Model;
@@ -17,31 +20,70 @@ import view.View;
 public class Controller {
 	private Model model;
 	private View view;
-	
 	private Timer timer;
 	
 	private static final int DELAY = 250;
 	
-	private static final int DISP_LEVEL = 0;
-    private static final int DISP_NEXT_LEVEL = 1;
-    private static final int DISP_GAME_OVER = 2;
-    private static final int DISP_GAME_WON = 3;
-	
-    // TODO: fix infinite game over message
+	private static final int PLAYING = 0;
+    private static final int TRANSITION_STATE = 1;
+    private static final int GAME_OVER = 2;
+    private static final int GAME_WON = 3;
+    
+    /*
+     * Constructor that creates the controller class with a model and view
+     */
 	public Controller() {
 		model = new Model(this);
 		view = new View(this);
-		view.setState(DISP_LEVEL);
 		
 		view.getWindow().addKeyListener(new CustomKeyListener());
-		view.getWindow().addMouseListener(new CustomOnReleaseListener());
 		
 		startTimer();
 	}
 	
-	public class CustomKeyListener implements KeyListener {
+	/*
+	 * Returns the game board stored by the model
+	 * 
+	 * @return the game board stored by the model
+	 */
+	public Tile[][] getBoard() {
+		return model.getBoard();
+	}
+	
+	/*
+	 * Sets the view's state to display the game over screen
+	 */
+	public void gameOver() {
+		view.setState(GAME_OVER);
+	}
+	
+	/*
+	 * Sets the view's state to display the game won screen
+	 */
+	public void gameWon() {
+		view.setState(GAME_WON);		
+	}
+	
+	/*
+	 * Sets the view's state to display the transition-to-next-level screen
+	 */
+	public void goToNextLevel() {
+		view.setState(TRANSITION_STATE);
+	}
+	
+	/*
+	 * Sets the view's state to display the current level
+	 */
+	public void showLevel() {
+		view.setState(PLAYING);		
+	}
+	
+	/*
+	 * This class listens for the user's key presses
+	 */
+	private class CustomKeyListener implements KeyListener {
 		@Override
-		public void keyPressed(KeyEvent e) {
+		public void keyPressed(KeyEvent e) { // TODO: fix infinite game over screen, add delay to inputs
 			if (e.getKeyCode() == KeyEvent.VK_UP) {
 				model.playerMove(-1, 0);
 				view.updateBoard(model.getBoard());
@@ -58,9 +100,8 @@ public class Controller {
 				model.playerMove(0, 1);
 				view.updateBoard(model.getBoard());
 			}
-			if (e.getKeyCode() == KeyEvent.VK_SPACE && view.getState() == DISP_NEXT_LEVEL) {
+			if (e.getKeyCode() == KeyEvent.VK_SPACE && view.getState() == TRANSITION_STATE) {
 				model.nextLevel();
-				view.repaint();
 			}
 		}
 		@Override
@@ -69,15 +110,10 @@ public class Controller {
 		public void keyTyped(KeyEvent e) {}
 	}
 	
-	public class CustomOnReleaseListener extends MouseAdapter {
-		@Override
-		public void mouseReleased(MouseEvent e) {
-			super.mouseReleased(e);
-			//Do stuff
-		}
-	}
-	
-	public void startTimer() {
+	/*
+	 * Starts a timer that calls a set of regularly-repeated game functions
+	 */
+	private void startTimer() {
 		timer = new Timer(DELAY, new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -87,25 +123,5 @@ public class Controller {
 			}
 		});
 		timer.start();
-	}
-	
-	public Tile[][] getBoard() {
-		return model.getBoard();
-	}
-	
-	public void displayGameOverView() {
-		view.setState(DISP_GAME_OVER);
-	}
-	
-	public void displayGameWonView() {
-		view.setState(DISP_GAME_WON);		
-	}
-	
-	public void displayNextView() {
-		view.setState(DISP_NEXT_LEVEL);
-	}
-	
-	public void displayLevel() {
-		view.setState(DISP_LEVEL);		
 	}
 }
