@@ -17,12 +17,10 @@ public class Model {
 	protected static final char GRANITE = 'G';
 	protected static final char SOFT_SAND = 'S';
 	protected static final char BACKGROUND = '0';
-
 	protected static final char BOMB = 'B';
 	protected static final char ORB = 'O';
 	protected static final char ROCK = 'R';
 	protected static final char PORTAL = 'P';
-
 	protected static final char PLAYER = 'U';
 	protected static final char MUMMY = 'M';
 	
@@ -60,7 +58,7 @@ public class Model {
 		levelList = new ArrayList<Tile[][]>();		
 		loadLevels();
 		
-		currentLevel = 6;
+		currentLevel = 0;
 		board = levelList.get(currentLevel);
 		
 		gravityList = new ArrayList<Tile>();
@@ -122,6 +120,8 @@ public class Model {
 	 * Initialize the lists and variables for tracking the certain tile locations
 	 */
 	private void setTileTrackingVars() {
+		gravityList.clear();
+		enemyList.clear();
 		for(int row = 0; row != board.length; ++row) {
 			for(int col = 0; col != board[0].length; ++col) {
 				Tile t = board[row][col];
@@ -194,136 +194,157 @@ public class Model {
 	 */
 	public void gravity() {
 		for(int i = gravityList.size()-1; i != -1; --i) {
+			if(gravityList.get(i) == null) {
+				gravityList.remove(i);
+				continue;
+			}
 			Tile t = gravityList.get(i);
 			Tile below = board[t.getRow()+1][t.getCol()];
 			if(t.canMoveInto(below.getType())) {
 				if(below.getType() == PORTAL) {
-					gravityList.remove(i); // If the object is an orb and it falls into the portal, remove it from the
-										   // board
+					// If the object is an orb and it falls into the portal, remove it from the board
+					gravityList.set(i, null);
 					if(--numOrbs == 0) {
 						controller.displayNextView();
 					}
 				} else {
-					below.setType(t.getType()); // Lower the object by one tile
+					// Lower the object by one tile
+					below.setType(t.getType());
 					below.setFalling(true);
 					gravityList.set(i, below);
 				}
 				t.setType(BACKGROUND);
+				t.setFalling(false);
 			} else if(t.isFalling() && t.explodesOn(below.getType())) {
-				int adjustment = explode(t.getRow(), t.getCol(), t.getRow(), t.getCol()); // Create an explosion
-																						  // centered around the tile
-				i -= adjustment; // Shift i to account for objects destroyed in explosion
+				explode(t.getRow(), t.getCol()); // Create an explosion centered around the tile
 			} else {
-				t.setFalling(false); // TODO: fix rock dropping on guy not killing guy
-									 // TODO: fix bug where moving the orb into the portal super fast leaves the rock
-									 //       in the same place in the next level for some reason
+				t.setFalling(false); // TODO: make gravityList sort every time objects change position
 									 // TODO: fix infinite game over message
 			}
 		}
 	}
 	
 	/*
-	 * Explodes the target tile and its 8 surrounding tiles. Surrounding bombs trigger a chain of explosions. This
-	 * function returns the total number of gravity-affected objects that were exploded to the left/above the initial
-	 * target in order to adjust the loop index of the gravity function
+	 * Explodes the target tile and its 8 surrounding tiles. Surrounding bombs trigger a chain of explosions.
 	 * 
 	 * @param row row of the explosion target
 	 * 
 	 * @param col column of the explosion target
-	 * 
-	 * @param initRow row of the original explosion target
-	 * 
-	 * @param initCol column of the original explosion target
-	 * 
-	 * @return the total number of gravity-afftected objects exploded to the left/above the initial explosion target
 	 */
-	public int explode(int row, int col, int initRow, int initCol) {
-		int adjustIndex = 0; // Number of gravity-affected objects exploded left/above the initial target
+	public void explode(int row, int col) {
 		for(int r = -1; r != 2; ++r) {
 			for(int c = -1; c != 2; ++c) {
 				Tile t = board[row+r][col+c];
-				if(t.getType() == PLAYER) {
-					controller.displayGameOverView(); // Game over if player explodes
-					break;
-				}
 				if(t.canExplode()) {
-					if(gravityList.contains(t)) {
-						gravityList.remove(t);
-						if(10*(row+r) + (col+c) < 10*initRow + initCol) {
-							++adjustIndex;
+					// Game over if player explodes
+					if(t.getType() == PLAYER) {
+						if(r != 0 || c != 0) {
+							t.setType(BACKGROUND);
+							explode(row+r, col+c); // Causes a chain explosion
+						} else {
+							t.setType(BACKGROUND);
 						}
+						controller.displayGameOverView();
+						break;
 					}
-					if(t.getType() == BOMB && (r != 0 || c != 0)) {
+					
+					// Remove object from gravity-affected list
+					if(gravityList.contains(t)) {
+						gravityList.set(gravityList.indexOf(t), null);
+					}
+					
+					// Remove object from enemy list
+					if(enemyList.contains(t)) {
+						enemyList.set(enemyList.indexOf(t), null);
+					}
+					
+					// Explode object
+					if((t.getType() == BOMB || t.getType() == MUMMY) && (r != 0 || c != 0)) {
 						t.setType(BACKGROUND);
-						adjustIndex += explode(row+r, col+c, initRow, initCol); // Causes a chain explosion
+						explode(row+r, col+c); // Causes a chain explosion
 					} else {
 						t.setType(BACKGROUND);
 					}
 				}
 			}
 		}
-		return adjustIndex;
 	}
 	
-	public Tile[][] move(int dRow, int dCol) {
-		if(inBounds(playerRow + dRow, playerCol + dCol) && canBeMovedOn(board[playerRow + dRow][playerCol + dCol])) {
-			if(board[playerRow + dRow][playerCol + dCol].getType() == MUMMY) { // Man -> Mummy
-				loadGameOverView();
-			}
-			else if(board[playerRow + dRow][playerCol + dCol].getType() == SOFT_SAND || board[playerRow + dRow][playerCol + dCol].getType() == BACKGROUND) { // Man -> Soft Sand
-				board[playerRow + dRow][playerCol + dCol] = board[playerRow][playerCol]; // Move player forward
-				board[playerRow][playerCol] = new Tile(BACKGROUND, playerRow, playerCol); // Set player's old position to background
-				
+	/*
+	 * Move the player one tile in the given direction if possible, and have him push pushable objects in the same
+	 * direction
+	 * 
+	 * @param dRow the desired change in horizontal position
+	 * 
+	 * @param dCol the desired change in vertical position
+	 */
+	public void playerMove(int dRow, int dCol) {
+		Tile player = board[playerRow][playerCol];
+		Tile target = board[playerRow+dRow][playerCol+dCol];
+		if(player.canMoveInto(target.getType())) {
+			if(target.getType() == SOFT_SAND || target.getType() == BACKGROUND) {
+				target.setType(PLAYER);
+				player.setType(BACKGROUND);
 				playerRow = playerRow + dRow;
 				playerCol = playerCol + dCol;
-			} 
-			else if(inBounds(playerRow + 2 * dRow, playerCol + 2 * dCol) && (board[playerRow + 2 * dRow][playerCol + 2 * dCol].getType() == BACKGROUND)) { // Man -> Movable Object -> BACKGROUND
-
-				if (board[playerRow + dRow][playerCol + dCol].getType() == BOMB) { // Clears surrounding positions
-					board[playerRow + 2 * dRow][playerCol + 2 * dCol] = board[playerRow + dRow][playerCol + dCol]; // Move the object in front of the player forward
-				} else {
-					board[playerRow + 2 * dRow][playerCol + 2 * dCol] = board[playerRow + dRow][playerCol + dCol]; // Move the object in front of the player forward
-				}
-				board[playerRow + dRow][playerCol + dCol] = board[playerRow][playerCol]; // Move the player forward
-				board[playerRow][playerCol] = new Tile(BACKGROUND, playerRow, playerCol); // Set player's old position to background
-				board[playerRow + 2 * dRow][playerCol + 2 * dCol].setRow(playerRow + 2 * dRow);
-				board[playerRow + 2 * dRow][playerCol + 2 * dCol].setCol(playerCol + 2 * dCol);
-				
-				playerRow = playerRow + dRow;
-				playerCol = playerCol + dCol;
-			} else if (inBounds(playerRow + 2 * dRow, playerCol + 2 * dCol) && (board[playerRow + dRow][playerCol + dCol].getType() == ORB) && (board[playerRow + 2 * dRow][playerCol + 2 * dCol].getType() == PORTAL)) { // Orb is pushed into portal
-				board[playerRow + dRow][playerCol + dCol] = board[playerRow][playerCol]; // Move the player forward
-				board[playerRow][playerCol] = new Tile(BACKGROUND, playerRow, playerCol); // Set player's old position to background
-				playerRow = playerRow + dRow;
-				playerCol = playerCol + dCol;
-				
-				// Know when the level is completed
-				numOrbs--;
-				if (numOrbs <= 0) {
-					controller.displayNextView();
+			} else if(target.getType() == MUMMY) {
+				explode(target.getRow(), target.getCol());
+			} else {
+				Tile nextNext = board[playerRow + 2*dRow][playerCol + 2*dCol];
+				Tile belowTarget = board[playerRow+dRow+1][playerCol+dCol];
+				if(target.canMoveInto(nextNext.getType()) && !target.isFalling() && !(target.canFall() &&
+						target.canMoveInto(belowTarget.getType()))) { // Make sure object isn't falling
+					
+					nextNext.setType(target.getType());
+					nextNext.setFalling(target.isFalling());
+					target.setType(PLAYER);
+					target.setFalling(false);
+					
+					if(gravityList.contains(target)) {
+						gravityList.set(gravityList.indexOf(target), nextNext);
+					}
+					
+					player.setType(BACKGROUND);
+					playerRow = playerRow + dRow;
+					playerCol = playerCol + dCol;
 				}
 			}
 		}
-		return board;
 	}
 	
-	public boolean canBeExploded(char type) {
-		if (type == ORB) {
-			numOrbs--;
-			loadGameOverView();
+	/*
+	 * Move each enemy to the square in its range that is closest to the player
+	 */
+	public void enemyMove() {
+		for(int i = 0; i != enemyList.size(); ++i) {
+			
 		}
-		return (type == GRANITE || type == SOFT_SAND || type == BOMB || type == ROCK || type == MUMMY);
 	}
 	
+    // Updates mummy position
+  	public Tile[][] updateMummyPositions() {
+  		updateEnemyList();
+  		for(int i = 0; i < enemyList.size(); i++) {
+  			Tile t = enemyList.get(i);
+  			
+  			int newRow = (int)getBestMummyMove(t.getRow(), t.getCol()).getX();
+  			int newCol = (int)getBestMummyMove(t.getRow(), t.getCol()).getY();
+  			
+  			board[t.getRow()][t.getCol()] = new Tile(BACKGROUND, t.getRow(), t.getCol());
+  			
+  			if(board[newRow][newCol].getType() == PLAYER) {
+  				loadGameOverView();
+  			}
+  			
+  			board[newRow][newCol] = new Tile(MUMMY, newRow, newCol);
+  			enemyList.set(i, board[newRow][newCol]);
+  		}
+  		return board;
+  	}
 	
 	// Returns whether the tile is in bounds.
 	private boolean inBounds(int row, int col) {
  		return (row >= 0 && col >= 0 && row < board.length && col < board[0].length);
- 	}
- 	
-	// Returns whether the tile can be moved on
- 	private boolean canBeMovedOn(Tile tile) {
- 		return (tile.getType() != HARD_SAND && tile.getType() != GRANITE && tile.getType() != PORTAL);
  	}
  	
  	// Return whether the tile can be moved on by a mummy
@@ -342,27 +363,6 @@ public class Model {
  			}
  		}
  	}
- 	
- 	// Updates mummy position
-  	public Tile[][] updateMummyPosition() {
-  		updateMummyList();
-  		for(int i = 0; i < enemyList.size(); i++) {
-  			Tile t = enemyList.get(i);
-  			
-  			int newRow = (int)getBestMummyMove(t.getRow(), t.getCol()).getX();
-  			int newCol = (int)getBestMummyMove(t.getRow(), t.getCol()).getY();
-  			
-  			board[t.getRow()][t.getCol()] = new Tile(BACKGROUND, t.getRow(), t.getCol());
-  			
-  			if(board[newRow][newCol].getType() == PLAYER) {
-  				loadGameOverView();
-  			}
-  			
-  			board[newRow][newCol] = new Tile(MUMMY, newRow, newCol);
-  			enemyList.set(i, board[newRow][newCol]);
-  		}
-  		return board;
-  	}
   	
   	// Find the move that will decrease the distance between the mummy and the player the most
   	public Point getBestMummyMove(int row, int col) {
@@ -417,7 +417,7 @@ public class Model {
 		}
 	}
 	
-	public void updateMummyList() {
+	public void updateEnemyList() {
 		enemyList.clear(); // Clear the list from the previous level
 		for(int row = 0; row < board.length; row++) {
 			for(int col = 0; col < board[0].length; col++) {
@@ -440,34 +440,14 @@ public class Model {
 	public Tile[][] getBoard() {
 		return board;
 	}
-	
+
 	// Returns the player's row
 	public int getPlayerRow() {
 		return playerRow;
 	}
-	
+
 	// Returns the player's column
 	public int getPlayerCol() {
 		return playerCol;
-	}
-	
-	public void printBoard(Tile[][] gen) {
-		System.out.print("    ");
-		for (int i = 0; i < gen.length; i++) {
-			System.out.print(i % 10);
-		}
-		System.out.println();
-		for (int row = 0; row < gen.length; row++) {
-			if (row < 10) {
-				System.out.print(" " + row);
-			} else {
-				System.out.print(row);
-			}
-			System.out.print("  ");
-			for (int col = 0; col < gen[0].length; col++) {
-				System.out.print(gen[row][col].getType());
-			}
-			System.out.println();
-		}
 	}
 }

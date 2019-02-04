@@ -190,6 +190,11 @@ public final class Tile {
 		case Model.ORB:
 			canFall = true;
 			canExplode = true;
+			explodesOn.addAll(Arrays.asList(new Character[] {
+					Model.BOMB,
+					Model.PLAYER,
+					Model.MUMMY
+			}));
 			canMoveInto.addAll(Arrays.asList(new Character[] { Model.BACKGROUND, Model.PORTAL }));
 			break;
 		case Model.ROCK:
@@ -214,13 +219,14 @@ public final class Tile {
 					Model.BACKGROUND,
 					Model.BOMB,
 					Model.ORB,
-					Model.ROCK
+					Model.ROCK,
+					Model.MUMMY
 			}));
 			break;
 		case Model.MUMMY:
 			canFall = false;
 			canExplode = true;
-			canMoveInto.add(Model.BACKGROUND);
+			canMoveInto.addAll(Arrays.asList(Model.BACKGROUND, Model.PLAYER));
 		}
 	}
 }

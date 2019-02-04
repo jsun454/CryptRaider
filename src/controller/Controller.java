@@ -18,13 +18,7 @@ public class Controller {
 	private Model model;
 	private View view;
 	
-	int numRows;
-	int numCols;
-	
-	Timer timer;
-	int time = 0;
-	
-	Tile[][] board;
+	private Timer timer;
 	
 	private static final int DELAY = 250;
 	
@@ -32,50 +26,36 @@ public class Controller {
     private static final int DISP_NEXT_LEVEL = 1;
     private static final int DISP_GAME_OVER = 2;
     private static final int DISP_GAME_WON = 3;
-    private static final int DISP_MENU = 4;
 	
 	public Controller() {
-		createModel();
-		createView();
+		model = new Model(this);
+		view = new View(this);
+		view.setState(DISP_LEVEL);
 		
 		view.getWindow().addKeyListener(new CustomKeyListener());
 		view.getWindow().addMouseListener(new CustomOnReleaseListener());
 		
 		startTimer();
-		
-//		view.startTimer(); // DO THIS ONCE GAME HAS STARTED
-//		view.homeScreen(); // Displays the home screen
-	}
-	
-	private void createModel() {
-		model = new Model(this);
-		board = model.getBoard();
-		numRows = board.length;
-		numCols = board[0].length;
-	}
-	
-	private void createView() {
-		view = new View(this);
-		view.setState(DISP_LEVEL);
-		view.setVisible(true);
-		view.setResizable(false);
-		view.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
 	
 	public class CustomKeyListener implements KeyListener {
 		@Override
 		public void keyPressed(KeyEvent e) {
 			if (e.getKeyCode() == KeyEvent.VK_UP) {
-				view.updateBoard(model.move(-1, 0));
+				model.playerMove(-1, 0);
+				view.updateBoard(model.getBoard());
 			}
 			if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-				view.updateBoard(model.move(1, 0));
+				model.playerMove(1, 0);
+				view.updateBoard(model.getBoard());
 			}
 			if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-				view.updateBoard(model.move(0, -1));	
+				model.playerMove(0, -1);
+				view.updateBoard(model.getBoard());	
 			}
 			if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-				view.updateBoard(model.move(0, 1));
+				model.playerMove(0, 1);
+				view.updateBoard(model.getBoard());
 			}
 			if (e.getKeyCode() == KeyEvent.VK_SPACE && view.getState() == DISP_NEXT_LEVEL) {
 				model.loadNextLevel();
@@ -101,8 +81,8 @@ public class Controller {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				model.gravity();
+				model.enemyMove();
 				view.updateBoard(model.getBoard());
-				view.updateBoard(model.updateMummyPosition());
 			}
 		});
 		timer.start();
@@ -113,7 +93,7 @@ public class Controller {
 	}
 	
 	public void displayGameOverView() {
-		view.setState(DISP_GAME_OVER);	
+		view.setState(DISP_GAME_OVER);
 	}
 	
 	public void displayGameWonView() {
