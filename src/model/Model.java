@@ -1,7 +1,5 @@
 package model;
 
-import java.awt.Point;
-import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -58,7 +56,7 @@ public class Model {
 		levelList = new ArrayList<Tile[][]>();		
 		loadLevels();
 		
-		currentLevel = 0;
+		currentLevel = 3;
 		board = levelList.get(currentLevel);
 		
 		gravityList = new ArrayList<Tile>();
@@ -66,6 +64,101 @@ public class Model {
 		numOrbs = 0;
 		
 		setTileTrackingVars();
+	}
+	
+	/*
+	 * Move the player one tile in the given direction if possible, and have him push pushable objects in the same
+	 * direction
+	 * 
+	 * @param dRow the desired change in horizontal position
+	 * 
+	 * @param dCol the desired change in vertical position
+	 */
+	public void playerMove(int dRow, int dCol) {
+		Tile player = board[playerRow][playerCol];
+		Tile target = board[playerRow+dRow][playerCol+dCol];
+		if(player.canMoveInto(target.getType())) {
+			// Check if the player can move into the target tile
+			if(target.getType() == SOFT_SAND || target.getType() == BACKGROUND) {
+				target.setType(PLAYER);
+				player.setType(BACKGROUND);
+				playerRow = playerRow + dRow;
+				playerCol = playerCol + dCol;
+			} else if(target.getType() == MUMMY) {
+				// Explode the player if he moves into an enemy
+				explode(player.getRow(), player.getCol());
+			} else {
+				Tile nextNext = board[playerRow + 2*dRow][playerCol + 2*dCol];
+				Tile belowTarget = board[playerRow+dRow+1][playerCol+dCol];
+				
+				// Player pushes the object if there is nothing behind it and it isn't falling
+				if(target.canMoveInto(nextNext.getType()) && !target.isFalling() && !(target.canFall() &&
+						target.canMoveInto(belowTarget.getType()))) {
+					
+					nextNext.setType(target.getType());
+					nextNext.setFalling(target.isFalling());
+					target.setType(PLAYER);
+					target.setFalling(false);
+					
+					if(gravityList.contains(target)) {
+						gravityList.set(gravityList.indexOf(target), nextNext);
+					}
+					
+					player.setType(BACKGROUND);
+					playerRow = playerRow + dRow;
+					playerCol = playerCol + dCol;
+				}
+			}
+		}
+	}
+	
+	/*
+	 * Move each enemy to the square within its range that's closest to the player
+	 */
+	public void enemyMove() {
+		for(int i = enemyList.size() - 1; i != -1; --i) {
+			if(enemyList.get(i) == null) {
+				enemyList.remove(i);
+				continue;
+			}
+			Tile enemy = enemyList.get(i);
+			mummyMove(enemy.getRow(), enemy.getCol());
+		}
+	}
+	
+	/*
+	 * Lowers all gravity-affected objects by one tile if possible
+	 */
+	public void gravity() {
+		for(int i = gravityList.size()-1; i != -1; --i) {
+			if(gravityList.get(i) == null) {
+				gravityList.remove(i);
+				continue;
+			}
+			Tile t = gravityList.get(i);
+			Tile below = board[t.getRow()+1][t.getCol()];
+			if(t.canMoveInto(below.getType())) {
+				if(below.getType() == PORTAL) {
+					// If the object is an orb and it falls into the portal, remove it from the board
+					gravityList.set(i, null);
+					if(--numOrbs == 0) {
+						controller.displayNextView();
+					}
+				} else {
+					// Lower the object by one tile
+					below.setType(t.getType());
+					below.setFalling(true);
+					gravityList.set(i, below);
+				}
+				t.setType(BACKGROUND);
+				t.setFalling(false);
+			} else if(t.isFalling() && t.explodesOn(below.getType())) {
+				explode(t.getRow(), t.getCol()); // Create an explosion centered around the tile
+			} else {
+				t.setFalling(false); // TODO: make gravityList sort every time objects change position
+									 // TODO: fix infinite game over message
+			}
+		}
 	}
 	
 	/*
@@ -117,34 +210,6 @@ public class Model {
 	}
 	
 	/*
-	 * Initialize the lists and variables for tracking the certain tile locations
-	 */
-	private void setTileTrackingVars() {
-		gravityList.clear();
-		enemyList.clear();
-		for(int row = 0; row != board.length; ++row) {
-			for(int col = 0; col != board[0].length; ++col) {
-				Tile t = board[row][col];
-				
-				// Add objects that can fall to the gravity list
-				if(t.canFall()) {
-					gravityList.add(t);
-				}
-				
-				// Update variables for tracking enemies, player, and orbs
-				if(t.getType() == MUMMY) {
-					enemyList.add(t);
-				} else if(t.getType() == PLAYER) {
-					playerRow = t.getRow();
-					playerCol = t.getCol();
-				} else if(t.getType() == ORB) {
-					++numOrbs;
-				}
-			}
-		}
-	}
-	
-	/*
 	 * Converts a given image file string to its corresponding character
 	 * 
 	 * @param s the string containing the name of an image file
@@ -190,36 +255,29 @@ public class Model {
 	}
 	
 	/*
-	 * Lowers all gravity-affected objects by one tile if possible
+	 * Initialize the lists and variables for tracking the certain tile locations
 	 */
-	public void gravity() {
-		for(int i = gravityList.size()-1; i != -1; --i) {
-			if(gravityList.get(i) == null) {
-				gravityList.remove(i);
-				continue;
-			}
-			Tile t = gravityList.get(i);
-			Tile below = board[t.getRow()+1][t.getCol()];
-			if(t.canMoveInto(below.getType())) {
-				if(below.getType() == PORTAL) {
-					// If the object is an orb and it falls into the portal, remove it from the board
-					gravityList.set(i, null);
-					if(--numOrbs == 0) {
-						controller.displayNextView();
-					}
-				} else {
-					// Lower the object by one tile
-					below.setType(t.getType());
-					below.setFalling(true);
-					gravityList.set(i, below);
+	private void setTileTrackingVars() {
+		gravityList.clear();
+		enemyList.clear();
+		for(int row = 0; row != board.length; ++row) {
+			for(int col = 0; col != board[0].length; ++col) {
+				Tile t = board[row][col];
+				
+				// Add objects that can fall to the gravity list
+				if(t.canFall()) {
+					gravityList.add(t);
 				}
-				t.setType(BACKGROUND);
-				t.setFalling(false);
-			} else if(t.isFalling() && t.explodesOn(below.getType())) {
-				explode(t.getRow(), t.getCol()); // Create an explosion centered around the tile
-			} else {
-				t.setFalling(false); // TODO: make gravityList sort every time objects change position
-									 // TODO: fix infinite game over message
+				
+				// Update variables for tracking enemies, player, and orbs
+				if(t.getType() == MUMMY) {
+					enemyList.add(t);
+				} else if(t.getType() == PLAYER) {
+					playerRow = t.getRow();
+					playerCol = t.getCol();
+				} else if(t.getType() == ORB) {
+					++numOrbs;
+				}
 			}
 		}
 	}
@@ -231,39 +289,39 @@ public class Model {
 	 * 
 	 * @param col column of the explosion target
 	 */
-	public void explode(int row, int col) {
+	private void explode(int row, int col) {
 		for(int r = -1; r != 2; ++r) {
 			for(int c = -1; c != 2; ++c) {
-				Tile t = board[row+r][col+c];
-				if(t.canExplode()) {
+				Tile target = board[row+r][col+c];
+				if(target.canExplode()) {
 					// Game over if player explodes
-					if(t.getType() == PLAYER) {
+					if(target.getType() == PLAYER) {
 						if(r != 0 || c != 0) {
-							t.setType(BACKGROUND);
+							target.setType(BACKGROUND);
 							explode(row+r, col+c); // Causes a chain explosion
 						} else {
-							t.setType(BACKGROUND);
+							target.setType(BACKGROUND);
 						}
 						controller.displayGameOverView();
-						break;
+						return;
 					}
 					
-					// Remove object from gravity-affected list
-					if(gravityList.contains(t)) {
-						gravityList.set(gravityList.indexOf(t), null);
+					// Remove object from gravity-affected list (set to null)
+					if(gravityList.contains(target)) {
+						gravityList.set(gravityList.indexOf(target), null);
 					}
 					
-					// Remove object from enemy list
-					if(enemyList.contains(t)) {
-						enemyList.set(enemyList.indexOf(t), null);
+					// Remove object from enemy list (set to null)
+					if(enemyList.contains(target)) {
+						enemyList.set(enemyList.indexOf(target), null);
 					}
 					
 					// Explode object
-					if((t.getType() == BOMB || t.getType() == MUMMY) && (r != 0 || c != 0)) {
-						t.setType(BACKGROUND);
+					if((target.getType() == BOMB || target.getType() == MUMMY) && (r != 0 || c != 0)) {
+						target.setType(BACKGROUND);
 						explode(row+r, col+c); // Causes a chain explosion
 					} else {
-						t.setType(BACKGROUND);
+						target.setType(BACKGROUND);
 					}
 				}
 			}
@@ -271,161 +329,76 @@ public class Model {
 	}
 	
 	/*
-	 * Move the player one tile in the given direction if possible, and have him push pushable objects in the same
-	 * direction
+	 * Moves the mummy at the given row and column to the nearby tile closest to the player
 	 * 
-	 * @param dRow the desired change in horizontal position
+	 * @param row the mummy's current row
 	 * 
-	 * @param dCol the desired change in vertical position
+	 * @param col the mummy's current column
 	 */
-	public void playerMove(int dRow, int dCol) {
-		Tile player = board[playerRow][playerCol];
-		Tile target = board[playerRow+dRow][playerCol+dCol];
-		if(player.canMoveInto(target.getType())) {
-			if(target.getType() == SOFT_SAND || target.getType() == BACKGROUND) {
-				target.setType(PLAYER);
-				player.setType(BACKGROUND);
-				playerRow = playerRow + dRow;
-				playerCol = playerCol + dCol;
-			} else if(target.getType() == MUMMY) {
-				explode(target.getRow(), target.getCol());
-			} else {
-				Tile nextNext = board[playerRow + 2*dRow][playerCol + 2*dCol];
-				Tile belowTarget = board[playerRow+dRow+1][playerCol+dCol];
-				if(target.canMoveInto(nextNext.getType()) && !target.isFalling() && !(target.canFall() &&
-						target.canMoveInto(belowTarget.getType()))) { // Make sure object isn't falling
-					
-					nextNext.setType(target.getType());
-					nextNext.setFalling(target.isFalling());
-					target.setType(PLAYER);
-					target.setFalling(false);
-					
-					if(gravityList.contains(target)) {
-						gravityList.set(gravityList.indexOf(target), nextNext);
-					}
-					
-					player.setType(BACKGROUND);
-					playerRow = playerRow + dRow;
-					playerCol = playerCol + dCol;
-				}
-			}
-		}
-	}
-	
-	/*
-	 * Move each enemy to the square in its range that is closest to the player
-	 */
-	public void enemyMove() {
-		for(int i = 0; i != enemyList.size(); ++i) {
-			
-		}
-	}
-	
-    // Updates mummy position
-  	public Tile[][] updateMummyPositions() {
-  		updateEnemyList();
-  		for(int i = 0; i < enemyList.size(); i++) {
-  			Tile t = enemyList.get(i);
-  			
-  			int newRow = (int)getBestMummyMove(t.getRow(), t.getCol()).getX();
-  			int newCol = (int)getBestMummyMove(t.getRow(), t.getCol()).getY();
-  			
-  			board[t.getRow()][t.getCol()] = new Tile(BACKGROUND, t.getRow(), t.getCol());
-  			
-  			if(board[newRow][newCol].getType() == PLAYER) {
-  				loadGameOverView();
-  			}
-  			
-  			board[newRow][newCol] = new Tile(MUMMY, newRow, newCol);
-  			enemyList.set(i, board[newRow][newCol]);
-  		}
-  		return board;
-  	}
-	
-	// Returns whether the tile is in bounds.
-	private boolean inBounds(int row, int col) {
- 		return (row >= 0 && col >= 0 && row < board.length && col < board[0].length);
- 	}
- 	
- 	// Return whether the tile can be moved on by a mummy
-  	private boolean mummyCanBeMovedOn(Tile tile) {
-  		return(tile.getType() == BACKGROUND || tile.getType() == PLAYER);
-  	}
- 	
- 	// Updates player position
- 	public void updatePlayerPosition() {
- 		for(int row = 0; row < board.length; row++) {
- 			for(int col = 0; col < board[0].length; col++) {
- 				if(board[row][col].getType() == PLAYER) {
- 					playerRow = row;
- 					playerCol = col;
- 				}
- 			}
- 		}
- 	}
-  	
-  	// Find the move that will decrease the distance between the mummy and the player the most
-  	public Point getBestMummyMove(int row, int col) {
-  		double minDistance = 1000; // Temporary distance
-  		int newRow = -1;
-  		int newCol = -1;
-  		for(int r = -1; r <= 1; r++) {
-  			for(int c = -1; c <= 1; c++) {
-  				if(Math.abs(r) + Math.abs(c) == 1 && inBounds(row + r, col + c) && mummyCanBeMovedOn(board[row + r][col + c]) && Point2D.distance((double)playerRow, (double)playerCol, (double)row + r, (double)col + c) < minDistance) {
-  					newRow = row + r;
-  					newCol = col + c;
-  					minDistance = Point2D.distance((double)playerRow, (double)playerCol, (double)row + r, (double)col + c);
-  				}
-  			}
-  		}
+	private void mummyMove(int row, int col) {
+		Tile mummy = board[row][col];
+		int bestRow = row, bestCol = col;
+		double lowestDistance = distance(bestRow, bestCol, playerRow, playerCol);
 
-  		if(newRow != -1 && newCol != -1) {
-  			return (new Point(newRow, newCol));
-  		}
-  		else {
-  			return (new Point(row, col));
-  		}
-  	}
- 	
- 	public int getNumOrbs() {
- 		int numOrbs = 0;
- 		for (int row = 0; row < board.length; row++) {
-			for (int col = 0; col < board[0].length; col++) {
-				if (board[row][col].getType() == ORB) {
-					numOrbs++;
-				}
-			}
+		if(mummy.canMoveInto(board[row+1][col].getType())
+				&& distance(row+1, col, playerRow, playerCol) < lowestDistance) {
+			bestRow = row + 1;
+			bestCol = col;
+			lowestDistance = distance(bestRow, bestCol, playerRow, playerCol);
+		} else if(mummy.canMoveInto(board[row-1][col].getType())
+				&& distance(row-1, col, playerRow, playerCol) < lowestDistance) {
+			bestRow = row - 1;
+			bestCol = col;
+			lowestDistance = distance(bestRow, bestCol, playerRow, playerCol);
 		}
- 		return numOrbs;
- 	}
+		
+		if(mummy.canMoveInto(board[row][col+1].getType())
+				&& distance(row, col+1, playerRow, playerCol) < lowestDistance) {
+			bestRow = row;
+			bestCol = col + 1;
+		} else if(mummy.canMoveInto(board[row][col-1].getType())
+				&& distance(row, col-1, playerRow, playerCol) < lowestDistance) {
+			bestRow = row;
+			bestCol = col - 1;
+		}
+		System.out.print(distance(bestRow, bestCol, playerRow, playerCol) + " ");
+		System.out.print(distance(row+1, col, playerRow, playerCol) + " ");
+		System.out.print(distance(row-1, col, playerRow, playerCol) + " ");
+		System.out.print(distance(row, col+1, playerRow, playerCol) + " ");
+		System.out.println(distance(row, col-1, playerRow, playerCol) + " ");
+		if(bestRow != row || bestCol != col) {
+			if(board[bestRow][bestCol].getType() == PLAYER) {
+				explode(row, col);
+				return;
+			}
+			board[bestRow][bestCol].setType(MUMMY);
+			mummy.setType(BACKGROUND);
+			enemyList.set(enemyList.indexOf(mummy), board[bestRow][bestCol]);
+		}
+	}
+	
+	/*
+	 * Finds the distance between two points
+	 * 
+	 * @param x1 x-coordinate of the first point
+	 * 
+	 * @param y1 y-coordinate of the first point
+	 * 
+	 * @param x2 x-coordinate of the second point
+	 * 
+	 * @param y2 y-coordinate of the second point
+	 * 
+	 * @return the distance between the two points
+	 */
+	private double distance(int x1, int y1, int x2, int y2) {
+		return Math.sqrt(Math.pow(x2-x1, 2.0) + Math.pow(y2-y1, 2.0));
+	}
 	
 	// Sets the current board to the next level
 	public void loadNextLevel() {
 		board = levelList.get(++currentLevel);
 		setTileTrackingVars();
 		controller.displayLevel();
-	}
-	
-	public void updateGravityList() {
-		gravityList.clear(); // Clear the list from the previous level
-		for(int row = 0; row < board.length; row++) {
-			for(int col = 0; col < board[0].length; col++) {
-				if(board[row][col].getType() == BOMB || board[row][col].getType() == ROCK || board[row][col].getType() == ORB) {
-					gravityList.add(board[row][col]); // Add the tile to the 2D array of gravity tiles
-				}
-			}
-		}
-	}
-	
-	public void updateEnemyList() {
-		enemyList.clear(); // Clear the list from the previous level
-		for(int row = 0; row < board.length; row++) {
-			for(int col = 0; col < board[0].length; col++) {
-				if(board[row][col].getType() == MUMMY) {
-					enemyList.add(board[row][col]);
-				}
-			}
-		}
 	}
 	
 	public void loadGameOverView() {
@@ -439,15 +412,5 @@ public class Model {
 	// Returns the current board being used
 	public Tile[][] getBoard() {
 		return board;
-	}
-
-	// Returns the player's row
-	public int getPlayerRow() {
-		return playerRow;
-	}
-
-	// Returns the player's column
-	public int getPlayerCol() {
-		return playerCol;
 	}
 }
