@@ -30,7 +30,7 @@ public class Model {
 	protected static final char MUMMY = 'M';
 	
 	// Game information
-	private static final int NUM_LEVELS = 2; // TODO: set this to 20
+	private static final int NUM_LEVELS = 20;
 	
 	private static final int BOARD_WIDTH = 18;
 	private static final int BOARD_HEIGHT = 12;
@@ -63,7 +63,7 @@ public class Model {
 		levelList = new ArrayList<Tile[][]>();		
 		loadLevels();
 		
-		currentLevel = 0; // TODO: test level 16+
+		currentLevel = 0;
 		board = levelList.get(currentLevel);
 		
 		gravityList = new ArrayList<Tile>();
