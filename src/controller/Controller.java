@@ -25,7 +25,9 @@ public class Controller {
     public static final int TRANSITION_STATE = 2;
     public static final int GAME_OVER = 3;
     public static final int END_MENU = 4;
-	public static final int DELAY = 250;
+    
+	public static final int DELAY = 250; // Time in between in-game events (gravity tick, enemy movement)
+	public static final int INPUT_COOLDOWN = 30;
     
 	public int state;
 	
@@ -94,31 +96,33 @@ public class Controller {
 	 * This class listens for the user's key presses
 	 */
 	private class CustomKeyListener implements KeyListener {
+		long prevTime = System.currentTimeMillis();
 		@Override
-		public void keyPressed(KeyEvent e) { // TODO: add delay to inputs, FIX end screen not showing (user should press space 2x)
+		public void keyPressed(KeyEvent e) {
+			// Key presses that occur during the input cooldown window are ignored
+			if(System.currentTimeMillis() - prevTime < INPUT_COOLDOWN) {
+				return;
+			} else {
+				prevTime = System.currentTimeMillis();
+			}
+			
 			if(state == START_MENU) {
 				state = PLAYING;
-			}
-			if(e.getKeyCode() == KeyEvent.VK_UP) {
+			} else if(e.getKeyCode() == KeyEvent.VK_UP) {
 				model.playerMove(-1, 0);
 				view.updateBoard();
-			}
-			if(e.getKeyCode() == KeyEvent.VK_DOWN) {
+			} else if(e.getKeyCode() == KeyEvent.VK_DOWN) {
 				model.playerMove(1, 0);
 				view.updateBoard();
-			}
-			if(e.getKeyCode() == KeyEvent.VK_LEFT) {
+			} else if(e.getKeyCode() == KeyEvent.VK_LEFT) {
 				model.playerMove(0, -1);
 				view.updateBoard();	
-			}
-			if(e.getKeyCode() == KeyEvent.VK_RIGHT) {
+			} else if(e.getKeyCode() == KeyEvent.VK_RIGHT) {
 				model.playerMove(0, 1);
 				view.updateBoard();
-			}
-			if(e.getKeyCode() == KeyEvent.VK_SPACE && state == TRANSITION_STATE) {
+			} else if(e.getKeyCode() == KeyEvent.VK_SPACE && state == TRANSITION_STATE) {
 				model.nextLevel();
-			}
-			if(state == GAME_OVER || state == END_MENU) {
+			} else if(state == GAME_OVER || state == END_MENU) {
 				view.getWindow().setVisible(false);
 				view.getWindow().dispose();
 			}

@@ -1,5 +1,7 @@
 /*
  * This class handles the visual aspects of the game
+ * 
+ * @author Jeffrey Sun
  */
 
 package view;
