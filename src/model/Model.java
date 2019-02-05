@@ -30,7 +30,7 @@ public class Model {
 	protected static final char MUMMY = 'M';
 	
 	// Game information
-	private static final int NUM_LEVELS = 20;
+	private static final int NUM_LEVELS = 2; // TODO: set this to 20
 	
 	private static final int BOARD_WIDTH = 18;
 	private static final int BOARD_HEIGHT = 12;
@@ -63,7 +63,7 @@ public class Model {
 		levelList = new ArrayList<Tile[][]>();		
 		loadLevels();
 		
-		currentLevel = 0; // Tested up to 16
+		currentLevel = 0; // TODO: test level 16+
 		board = levelList.get(currentLevel);
 		
 		gravityList = new ArrayList<Tile>();
@@ -150,6 +150,7 @@ public class Model {
 					gravityList.set(i, null);
 					if(--numOrbs == 0) {
 						controller.goToNextLevel();
+						return;
 					}
 				} else {
 					// Lower the object by one tile
@@ -171,6 +172,10 @@ public class Model {
 	 * Load the board for the next level
 	 */
 	public void nextLevel() {
+		if(currentLevel == NUM_LEVELS - 1) {
+			controller.endMenu();
+			return;
+		}
 		board = levelList.get(++currentLevel);
 		setTileTrackingVars();
 		controller.showLevel();

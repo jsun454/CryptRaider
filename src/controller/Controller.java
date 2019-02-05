@@ -18,16 +18,20 @@ import model.Tile;
 import view.View;
 
 public class Controller {
+	
+	// Game states
+	public static final int START_MENU = 0;
+	public static final int PLAYING = 1;
+    public static final int TRANSITION_STATE = 2;
+    public static final int GAME_OVER = 3;
+    public static final int END_MENU = 4;
+	public static final int DELAY = 250;
+    
+	public int state;
+	
 	private Model model;
 	private View view;
 	private Timer timer;
-	
-	private static final int DELAY = 250;
-	
-	private static final int PLAYING = 0;
-    private static final int TRANSITION_STATE = 1;
-    private static final int GAME_OVER = 2;
-    private static final int GAME_WON = 3;
     
     /*
      * Constructor that creates the controller class with a model and view
@@ -35,9 +39,10 @@ public class Controller {
 	public Controller() {
 		model = new Model(this);
 		view = new View(this);
-		
 		view.getWindow().addKeyListener(new CustomKeyListener());
 		
+		state = START_MENU;
+
 		startTimer();
 	}
 	
@@ -51,57 +56,71 @@ public class Controller {
 	}
 	
 	/*
-	 * Sets the view's state to display the game over screen
+	 * Sets the state to the starting menu
 	 */
-	public void gameOver() {
-		view.setState(GAME_OVER);
+	public void startMenu() {
+		state = START_MENU;
 	}
 	
 	/*
-	 * Sets the view's state to display the game won screen
-	 */
-	public void gameWon() {
-		view.setState(GAME_WON);		
-	}
-	
-	/*
-	 * Sets the view's state to display the transition-to-next-level screen
-	 */
-	public void goToNextLevel() {
-		view.setState(TRANSITION_STATE);
-	}
-	
-	/*
-	 * Sets the view's state to display the current level
+	 * Sets the state to the current level
 	 */
 	public void showLevel() {
-		view.setState(PLAYING);		
+		state = PLAYING;
 	}
 	
+	/*
+	 * Sets the state to transitioning between levels
+	 */
+	public void goToNextLevel() {
+		state = TRANSITION_STATE;
+	}
+	
+	/*
+	 * Sets the state to game over
+	 */
+	public void gameOver() {
+		state = GAME_OVER;
+	}
+	
+	/*
+	 * Sets the state to the ending menu
+	 */
+	public void endMenu() {
+		state = END_MENU;
+	}
+
 	/*
 	 * This class listens for the user's key presses
 	 */
 	private class CustomKeyListener implements KeyListener {
 		@Override
-		public void keyPressed(KeyEvent e) { // TODO: fix infinite game over screen, add delay to inputs
-			if (e.getKeyCode() == KeyEvent.VK_UP) {
+		public void keyPressed(KeyEvent e) { // TODO: add delay to inputs, FIX end screen not showing (user should press space 2x)
+			if(state == START_MENU) {
+				state = PLAYING;
+			}
+			if(e.getKeyCode() == KeyEvent.VK_UP) {
 				model.playerMove(-1, 0);
-				view.updateBoard(model.getBoard());
+				view.updateBoard();
 			}
-			if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+			if(e.getKeyCode() == KeyEvent.VK_DOWN) {
 				model.playerMove(1, 0);
-				view.updateBoard(model.getBoard());
+				view.updateBoard();
 			}
-			if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+			if(e.getKeyCode() == KeyEvent.VK_LEFT) {
 				model.playerMove(0, -1);
-				view.updateBoard(model.getBoard());	
+				view.updateBoard();	
 			}
-			if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+			if(e.getKeyCode() == KeyEvent.VK_RIGHT) {
 				model.playerMove(0, 1);
-				view.updateBoard(model.getBoard());
+				view.updateBoard();
 			}
-			if (e.getKeyCode() == KeyEvent.VK_SPACE && view.getState() == TRANSITION_STATE) {
+			if(e.getKeyCode() == KeyEvent.VK_SPACE && state == TRANSITION_STATE) {
 				model.nextLevel();
+			}
+			if(state == GAME_OVER || state == END_MENU) {
+				view.getWindow().setVisible(false);
+				view.getWindow().dispose();
 			}
 		}
 		@Override
@@ -119,7 +138,7 @@ public class Controller {
 			public void actionPerformed(ActionEvent e) {
 				model.gravity();
 				model.enemyMove();
-				view.updateBoard(model.getBoard());
+				view.updateBoard();
 			}
 		});
 		timer.start();

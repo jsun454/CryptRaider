@@ -4,7 +4,7 @@
 
 package view;
 
-import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -12,62 +12,65 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-import javax.swing.Timer;
 
 import controller.Controller;
 import model.Tile;
 
 public class View extends JFrame {
 	private static final long serialVersionUID = -5856476386594461049L;
+	
+    private static final int TILE_LENGTH = 35;
+    private static final int BOARD_WIDTH = 18;
+    private static final int BOARD_HEIGHT = 12;
+    
+    private BufferedImage hardSand, granite, softSand, background, rock, bomb, orb, portal, player, mummy, menu, nextLevel, gameOver;
+    
+    private JFrame window;
+    private GamePanel game;
 
-	// instance variables
+    private int windowWidth;
+    private int windowHeight;
+
     private Controller controller;
-
-    private MyDrawingPanel drawingPanel;
-    public Tile[][] board;
-
-    Graphics g; 
-    MyDrawingPanel b;
-
-    private static final int PLAYING = 0;
-    private static final int TRANSITION_STATE = 1;
-    private static final int GAME_OVER = 2;
-    private static final int GAME_WON = 3;
-
-    private int STATE;
-
-    private final int WINDOW_WIDTH = 585;
-    private final int WINDOW_HEIGHT = 450;
-
-    private final int PIXEL = 30;
-    private final int BOARD_WIDTH = 18;
-    private final int BOARD_HEIGHT = 12;
-
-    BufferedImage hardSand, granite, softSand, background, rock, bomb, orb, portal, player, mummy, menu, nextLevel, gameOver;
-
-    Timer timer;
-    JFrame window;
-    int speed = 250;
-    int time = 0;
-
-    String[][] imageBoard = new String[BOARD_WIDTH][BOARD_HEIGHT];
-
-    public JButton nextLevelBtn;
-
+    
+    /*
+ 	 * Constructor that creates the view class with a reference to the controller
+ 	 * 
+ 	 * @param controller a reference to the controller of this model
+ 	 */
     public View(Controller controller) {
-        STATE = PLAYING;
-
         this.controller = controller;
-        board = controller.getBoard();
+        
+        windowWidth = TILE_LENGTH * BOARD_WIDTH;
+        windowHeight = TILE_LENGTH * BOARD_HEIGHT;
 
-        //Load all the images
-        try{
+        loadImages();
+        drawWindow();
+    }
+    
+    /*
+     * Returns the game window
+     * 
+     * @return the game window
+     */
+    public JFrame getWindow() {
+        return window;
+    }
+    
+    /*
+     * Updates the board
+     */
+    public void updateBoard() {
+        game.repaint();
+    }
+    
+    /*
+     * Loads the images corresponding to each tile
+     */
+    private void loadImages() {
+        try {
             hardSand = ImageIO.read(new File("images/hardSand.png"));
             granite = ImageIO.read(new File("images/granite.png"));
             softSand = ImageIO.read(new File("images/softSand.png"));
@@ -81,135 +84,101 @@ public class View extends JFrame {
             menu = ImageIO.read(new File("images/menu.png"));   
             nextLevel = ImageIO.read(new File("images/nextLevel.png")); 
             gameOver = ImageIO.read(new File("images/gameOver.png"));   
-        }catch(IOException i){
-            System.out.println(i.getMessage());
+        } catch(IOException e) {
+            e.printStackTrace();
         }
-
-        // Create Java Window
+    }
+    
+    /*
+     * Creates the window for the game to be displayed in
+     */
+    private void drawWindow() {
+    	// Creates window
         window = new JFrame("Crypt Raider");
-        window.setBounds(100, 100, WINDOW_WIDTH, WINDOW_HEIGHT);
         window.setResizable(false);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        // JPanel to draw in
-        drawingPanel = new MyDrawingPanel();
-        drawingPanel.setBounds(20, 20, BOARD_WIDTH*PIXEL, BOARD_HEIGHT*PIXEL);
-        drawingPanel.setBorder(BorderFactory.createEtchedBorder());
-
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(null);
-        mainPanel.add(drawingPanel);
-
-        window.getContentPane().add(mainPanel);
-
-        //Menu Stuff
-        JMenuBar myMenuBar = new JMenuBar();
-
-        JMenu optionMenu = new JMenu("Options");
-        JMenu helpMenu = new JMenu("Help");
-
-        JMenuItem newGameItem = new JMenuItem("New Game", 'n');
-        JMenuItem exitItem = new JMenuItem("Exit", 'e');
-        JMenuItem howToPlayItem = new JMenuItem("How To Play", 'h');
-        JMenuItem aboutItem = new JMenuItem("About", 'a');
-
-        optionMenu.add(newGameItem);
-        optionMenu.add(exitItem);
-        helpMenu.add(howToPlayItem);
-        helpMenu.add(aboutItem);
-
-        myMenuBar.add(optionMenu);
-        myMenuBar.add(helpMenu);
-
-        window.setJMenuBar(myMenuBar);
+        
+        // Creates game screen
+        game = new GamePanel();
+        game.setPreferredSize(new Dimension(windowWidth, windowHeight));
+        game.setBorder(BorderFactory.createEtchedBorder());
+        
+        window.getContentPane().add(game);
+        window.pack();
+        window.setLocationRelativeTo(null);
         window.setVisible(true);
     }
-
-    public void setState(int state) {
-        STATE = state;
-    }
-
-    public int getState() {
-        return STATE;
-    }
-
-    private class MyDrawingPanel extends JPanel {
-        // Not required, but gets rid of the serialVersionUID warning.
-        static final long serialVersionUID = 1234567890L;
-        
-        protected void paintComponent(Graphics g) {
-
-            board = controller.getBoard();
-            if (STATE == PLAYING) {
-                g.setColor(Color.white);
-                g.fillRect(2, 2, this.getWidth()-2, this.getHeight()-2);
-
-                g.setColor(Color.lightGray);
-                for (int x = 0; x < this.getWidth(); x += 30)
-                    g.drawLine(x, 0, x, this.getHeight());
-
-                for (int y = 0; y < this.getHeight(); y += 30)
-                    g.drawLine(0, y, this.getWidth(), y);
-
-                loadLevel(controller.getBoard(), g, this);
-
-            } else if (STATE == TRANSITION_STATE) {
-                loadNextLevel(g, drawingPanel);
-            } else if (STATE == GAME_OVER) {
-                GameOverScreen gameOver = new GameOverScreen();
-                gameOver.makeBoard();
-            }else if (STATE == GAME_WON) {
-                FinishGame finishGame = new FinishGame();
-                finishGame.makeBoard();
+    
+    /*
+     * This class keeps track of the game's state and displays different screens accordingly
+     */
+    private class GamePanel extends JPanel {
+		private static final long serialVersionUID = -8851704944356287602L;
+		
+		@Override
+		protected void paintComponent(Graphics g) {
+			if(controller.state == Controller.START_MENU) {
+				g.drawImage(menu, 0, 0, game.getWidth(), game.getHeight(), null);
+			} else if(controller.state == Controller.PLAYING) {
+                showLevel(controller.getBoard(), g);
+            } else if(controller.state == Controller.TRANSITION_STATE) {
+            	g.drawImage(nextLevel, 0, 0, game.getWidth(), game.getHeight(), null);
+            } else if(controller.state == Controller.GAME_OVER) {
+            	g.drawImage(gameOver, 0, 0, game.getWidth(), game.getHeight(), null);
+            } else if(controller.state == Controller.END_MENU) {
+            	g.drawImage(menu, 0, 0, game.getWidth(), game.getHeight(), null);
             }
         }
     }
 
-    public void loadLevel(Tile[][] a, Graphics g, MyDrawingPanel b) {
-        int countX = 0;
-        int countY = 0;
-
-        for (int i = 0; i < b.getWidth(); i += PIXEL) {
-            for (int j = 0; j < b.getHeight(); j += PIXEL) {
-                countX = j/PIXEL;
-                countY = i/PIXEL;
-
-                if(a[countX][countY].getType() == 'H')
-                    g.drawImage(hardSand, i, j, PIXEL, PIXEL, null);
-                else if(a[countX][countY].getType() == 'G')
-                    g.drawImage(granite, i, j, PIXEL, PIXEL, null);
-                else if(a[countX][countY].getType() == 'S')
-                    g.drawImage(softSand, i, j, PIXEL, PIXEL, null);
-                else if(a[countX][countY].getType() == '0')
-                    g.drawImage(background, i, j, PIXEL, PIXEL, null);
-                else if(a[countX][countY].getType() == 'R')
-                    g.drawImage(rock, i, j, PIXEL, PIXEL, null);
-                else if(a[countX][countY].getType() == 'B')
-                    g.drawImage(bomb, i, j, PIXEL, PIXEL, null);
-                else if(a[countX][countY].getType() == 'O')
-                    g.drawImage(orb, i, j, PIXEL, PIXEL, null);
-                else if(a[countX][countY].getType() == 'P')
-                    g.drawImage(portal, i, j, PIXEL, PIXEL, null);
-                else if(a[countX][countY].getType() == 'U')
-                    g.drawImage(player, i, j, PIXEL, PIXEL, null);
-                else if(a[countX][countY].getType() == 'M')
-                    g.drawImage(mummy, i, j, PIXEL, PIXEL, null);
-            }
-        }
-    }
-
-    public void loadNextLevel(Graphics g, MyDrawingPanel drawingPanel) {
-    	if(g != null){
-    		g.drawImage(nextLevel, 0, 0, drawingPanel.getWidth(), drawingPanel.getHeight(), null);
+    /*
+     * This class draws the current level
+     * 
+     * @param board the board to draw
+     * 
+     * @param g the object to draw with
+     */
+    private void showLevel(Tile[][] board, Graphics g) {
+    	if(board.length == 0) {
+    		return;
     	}
-    }
-
-    public JFrame getWindow() {
-        return window;
-    }
-
-    public void updateBoard(Tile[][] moveUp) {
-        board = moveUp;
-        drawingPanel.repaint();
+        for(int row = 0; row != BOARD_HEIGHT; ++row) {
+            for(int col = 0; col != BOARD_WIDTH; ++col) {
+            	int xPos = col * TILE_LENGTH;
+            	int yPos = row * TILE_LENGTH;
+                switch(board[row][col].getType()) {
+                case 'H':
+                	g.drawImage(hardSand, xPos, yPos, TILE_LENGTH, TILE_LENGTH, null);
+                	break;
+                case 'G':
+                	g.drawImage(granite, xPos, yPos, TILE_LENGTH, TILE_LENGTH, null);
+                	break;
+                case 'S':
+                	g.drawImage(softSand, xPos, yPos, TILE_LENGTH, TILE_LENGTH, null);
+                	break;
+                case '0':
+                	g.drawImage(background, xPos, yPos, TILE_LENGTH, TILE_LENGTH, null);
+                	break;
+                case 'R':
+                	g.drawImage(rock, xPos, yPos, TILE_LENGTH, TILE_LENGTH, null);
+                	break;
+                case 'B':
+                	g.drawImage(bomb, xPos, yPos, TILE_LENGTH, TILE_LENGTH, null);
+                	break;
+                case 'O':
+                	g.drawImage(orb, xPos, yPos, TILE_LENGTH, TILE_LENGTH, null);
+                	break;
+                case 'P':
+                	g.drawImage(portal, xPos, yPos, TILE_LENGTH, TILE_LENGTH, null);
+                	break;
+                case 'U':
+                	g.drawImage(player, xPos, yPos, TILE_LENGTH, TILE_LENGTH, null);
+                	break;
+                case 'M':
+                	g.drawImage(mummy, xPos, yPos, TILE_LENGTH, TILE_LENGTH, null);
+                	break;
+                }
+            }
+        }
     }
 }
