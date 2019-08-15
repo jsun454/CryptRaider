@@ -1,10 +1,3 @@
-/*
- * This class handles game data and functionality, storing object positions and implementing features such as gravity
- * and enemy movement
- * 
- * @author Jeffrey Sun
- */
-
 package model;
 
 import java.io.File;
@@ -15,6 +8,12 @@ import java.util.Scanner;
 
 import controller.Controller;
 
+/**
+ * This class handles game data and functionality, storing object positions and implementing features such as gravity
+ * and enemy movement
+ * 
+ * @author Jeffrey Sun
+ */
 public class Model {
 	
 	// Game objects
@@ -52,7 +51,7 @@ public class Model {
 	
 	private Controller controller;
 	
-	/*
+	/**
  	 * Constructor that creates the model class with a reference to the controller
  	 * 
  	 * @param controller a reference to the controller of this model
@@ -73,7 +72,7 @@ public class Model {
 		setTileTrackingVars();
 	}
 	
-	/*
+	/**
 	 * Move the player one tile in the given direction if possible, and have him push pushable objects in the same
 	 * direction
 	 * 
@@ -119,7 +118,7 @@ public class Model {
 		}
 	}
 	
-	/*
+	/**
 	 * Move each enemy to the square within its range that's closest to the player
 	 */
 	public void enemyMove() {
@@ -133,7 +132,7 @@ public class Model {
 		}
 	}
 	
-	/*
+	/**
 	 * Lowers all gravity-affected objects by one tile if possible
 	 */
 	public void gravity() {
@@ -168,7 +167,7 @@ public class Model {
 		}
 	}
 	
-	/*
+	/**
 	 * Load the board for the next level
 	 */
 	public void nextLevel() {
@@ -181,7 +180,7 @@ public class Model {
 		controller.showLevel();
 	}
 	
-	/*
+	/**
 	 * Returns the current game board
 	 * 
 	 * @return the current game board
@@ -190,7 +189,7 @@ public class Model {
 		return board;
 	}
 	
-	/*
+	/**
  	 * Loads each level from its respective text file in the levels folder 
 	 */
 	private void loadLevels() {
@@ -199,7 +198,7 @@ public class Model {
 		}
 	}
 
-	/*
+	/**
 	 * Extracts a level from a given level file
 	 * 
 	 * @param file the name of the file to extract the level from
@@ -238,7 +237,7 @@ public class Model {
 		return level;
 	}
 	
-	/*
+	/**
 	 * Converts a given image file string to its corresponding character
 	 * 
 	 * @param s the string containing the name of an image file
@@ -283,7 +282,7 @@ public class Model {
 		return c;
 	}
 	
-	/*
+	/**
 	 * Initialize the lists and variables for tracking the certain tile locations
 	 */
 	private void setTileTrackingVars() {
@@ -311,7 +310,7 @@ public class Model {
 		}
 	}
 	
-	/*
+	/**
 	 * Explodes the target tile and its 8 surrounding tiles. Surrounding bombs trigger a chain of explosions.
 	 * 
 	 * @param row row of the explosion target
@@ -357,7 +356,7 @@ public class Model {
 		}
 	}
 	
-	/*
+	/**
 	 * Moves the mummy at the given row and column to the nearby tile closest to the player
 	 * 
 	 * @param row the mummy's current row
@@ -402,7 +401,7 @@ public class Model {
 		}
 	}
 	
-	/*
+	/**
 	 * Finds the distance between two points
 	 * 
 	 * @param x1 x-coordinate of the first point

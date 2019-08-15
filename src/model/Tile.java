@@ -1,15 +1,14 @@
-/*
- * This class is used to represent individual objects in the game 
- * 
- * @author Jeffrey Sun
- */
-
 package model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * This class is used to represent individual objects in the game 
+ * 
+ * @author Jeffrey Sun
+ */
 public final class Tile {
 
 	private char type; // The type of object that is shown
@@ -23,7 +22,7 @@ public final class Tile {
 	private List<Character> explodesOn; // Stores tile types the object will explode on when falling
 	private List<Character> canMoveInto; // Stores tile types the object can move into
 
-	/*
+	/**
 	 * Constructor that creates a new tile based on the tile type
 	 * 
 	 * @param type character representing the object's type
@@ -44,7 +43,7 @@ public final class Tile {
 		setTypeBasedVars();
 	}
 
-	/*
+	/**
 	 * Returns the object's type
 	 * 
 	 * @return character representing the object's type
@@ -53,7 +52,7 @@ public final class Tile {
 		return type;
 	}
 
-	/*
+	/**
 	 * Returns the object's row
 	 * 
 	 * @return the object's row
@@ -62,7 +61,7 @@ public final class Tile {
 		return row;
 	}
 
-	/*
+	/**
 	 * Returns the object's column
 	 * 
 	 * @return the object's column
@@ -71,7 +70,7 @@ public final class Tile {
 		return col;
 	}
 
-	/*
+	/**
 	 * Returns whether the object is falling
 	 * 
 	 * @return whether the object is currently falling
@@ -80,7 +79,7 @@ public final class Tile {
 		return isFalling;
 	}
 
-	/*
+	/**
 	 * Returns whether the object can fall due to gravity
 	 * 
 	 * @return whether the object is affected by gravity
@@ -89,7 +88,7 @@ public final class Tile {
 		return canFall;
 	}
 
-	/*
+	/**
 	 * Returns whether the object can be exploded by other objects
 	 * 
 	 * @return whether the object can be exploded by other objects
@@ -98,7 +97,7 @@ public final class Tile {
 		return canExplode;
 	}
 
-	/*
+	/**
 	 * Returns a list of tile types that will cause the object to explode if the object falls onto them
 	 * 
 	 * @return the list of characters representing tiles the object can fall and explode on
@@ -107,7 +106,7 @@ public final class Tile {
 		return explodesOn.contains(type);
 	}
 
-	/*
+	/**
 	 * Returns a list of tile types that the object can move into
 	 * 
 	 * @return the list of characters representing tiles the object can move into
@@ -116,7 +115,7 @@ public final class Tile {
 		return canMoveInto.contains(type);
 	}
 
-	/*
+	/**
 	 * Sets the object's type to the given type
 	 * 
 	 * @param type the new type of the object
@@ -126,7 +125,7 @@ public final class Tile {
 		setTypeBasedVars();
 	}
 
-	/*
+	/**
 	 * Sets the object's row to the given row
 	 * 
 	 * @param row the new row of the object
@@ -135,7 +134,7 @@ public final class Tile {
 		this.row = row;
 	}
 
-	/*
+	/**
 	 * Sets the object's column to the given column
 	 * 
 	 * @param col the new column of the object
@@ -144,7 +143,7 @@ public final class Tile {
 		this.col = col;
 	}
 
-	/*
+	/**
 	 * Sets whether the object is currently falling
 	 * 
 	 * @param isFalling whether the object is currently falling
@@ -153,7 +152,7 @@ public final class Tile {
 		this.isFalling = isFalling;
 	}
 
-	/*
+	/**
 	 * Sets the type-based variables according to the object's current type
 	 */
 	private final void setTypeBasedVars() {
